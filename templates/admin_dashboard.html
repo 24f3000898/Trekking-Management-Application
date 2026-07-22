@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Trekking Management{% endblock %}
+
+{% block content %}
+<div class="p-4 bg-light rounded">
+    <h2>Welcome, {{ user.name if user else session.get('user_name', 'Admin') }}</h2>
+    <p class="lead mb-0">Role: Admin</p>
+</div>
+{% endblock %}
