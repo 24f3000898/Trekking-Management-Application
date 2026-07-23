@@ -1,9 +1,11 @@
 import os
+from datetime import date
 from functools import wraps
 
 from flask import Flask, flash, redirect, render_template, request, session
+from sqlalchemy import or_
 
-from models import User, db
+from models import Trek, User, db
 
 
 app = Flask(__name__)
@@ -61,6 +63,45 @@ def normalize_role(role):
     if role == "trekker":
         return "trekker"
     return role
+
+
+def parse_date(value):
+    if not value:
+        return None
+    return date.fromisoformat(value)
+
+
+def get_trek_form_data():
+    assigned_staff_id = request.form.get("assigned_staff_id") or None
+    if assigned_staff_id:
+        assigned_staff_id = int(assigned_staff_id)
+        staff = db.session.get(User, assigned_staff_id)
+        if not staff or staff.role != "staff" or staff.status != "approved":
+            raise ValueError
+
+    return {
+        "name": request.form.get("name"),
+        "location": request.form.get("location"),
+        "difficulty": request.form.get("difficulty"),
+        "duration_days": int(request.form.get("duration_days") or 0),
+        "available_slots": int(request.form.get("available_slots") or 0),
+        "start_date": parse_date(request.form.get("start_date")),
+        "end_date": parse_date(request.form.get("end_date")),
+        "assigned_staff_id": assigned_staff_id,
+    }
+
+
+def apply_search(query, model, name_column):
+    if not query:
+        return model.query
+
+    search_text = f"%{query}%"
+    filters = [name_column.ilike(search_text)]
+
+    if query.isdigit():
+        filters.append(model.id == int(query))
+
+    return model.query.filter(or_(*filters))
 
 
 @app.route("/")
@@ -152,7 +193,155 @@ def logout():
 @role_required("admin")
 def admin_dashboard():
     user = db.session.get(User, session["user_id"])
-    return render_template("admin_dashboard.html", user=user)
+    search_query = request.args.get("q", "").strip()
+
+    trek_query = apply_search(search_query, Trek, Trek.name)
+    staff_query = apply_search(search_query, User, User.name).filter_by(role="staff")
+    trekker_query = apply_search(search_query, User, User.name).filter_by(role="trekker")
+
+    total_treks = Trek.query.count()
+    total_trekkers = User.query.filter_by(role="trekker").count()
+    total_staff = User.query.filter_by(role="staff").count()
+    pending_staff_count = User.query.filter_by(role="staff", status="pending").count()
+
+    treks = trek_query.order_by(Trek.id.desc()).all()
+    staff_members = staff_query.order_by(User.id.desc()).all()
+    trekkers = trekker_query.order_by(User.id.desc()).all()
+    approved_staff = User.query.filter_by(role="staff", status="approved").order_by(User.name).all()
+
+    return render_template(
+        "admin_dashboard.html",
+        user=user,
+        search_query=search_query,
+        total_treks=total_treks,
+        total_trekkers=total_trekkers,
+        total_staff=total_staff,
+        pending_staff_count=pending_staff_count,
+        treks=treks,
+        staff_members=staff_members,
+        trekkers=trekkers,
+        approved_staff=approved_staff,
+    )
+
+
+@app.route("/admin/trek/add", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def add_trek():
+    if request.method == "GET":
+        return redirect("/admin/dashboard")
+
+    try:
+        trek = Trek(**get_trek_form_data())
+    except ValueError:
+        flash("Please enter valid trek details.", "danger")
+        return redirect("/admin/dashboard")
+
+    db.session.add(trek)
+    db.session.commit()
+    flash("Trek added successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/trek/edit/<int:id>", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def edit_trek(id):
+    if request.method == "GET":
+        return redirect("/admin/dashboard")
+
+    trek = db.session.get(Trek, id)
+    if not trek:
+        flash("Trek not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    try:
+        trek_data = get_trek_form_data()
+    except ValueError:
+        flash("Please enter valid trek details.", "danger")
+        return redirect("/admin/dashboard")
+
+    for field, value in trek_data.items():
+        setattr(trek, field, value)
+
+    db.session.commit()
+    flash("Trek updated successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/trek/delete/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def delete_trek(id):
+    trek = db.session.get(Trek, id)
+    if not trek:
+        flash("Trek not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    db.session.delete(trek)
+    db.session.commit()
+    flash("Trek deleted successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/staff/approve/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def approve_staff(id):
+    staff = db.session.get(User, id)
+    if not staff or staff.role != "staff":
+        flash("Staff member not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    staff.status = "approved"
+    db.session.commit()
+    flash("Staff member approved successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/staff/blacklist/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def blacklist_staff(id):
+    staff = db.session.get(User, id)
+    if not staff or staff.role != "staff":
+        flash("Staff member not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    staff.status = "blacklisted"
+    db.session.commit()
+    flash("Staff member blacklisted.", "warning")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/user/blacklist/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def blacklist_user(id):
+    user = db.session.get(User, id)
+    if not user or user.role != "trekker":
+        flash("Trekker not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    user.status = "blacklisted"
+    db.session.commit()
+    flash("Trekker blacklisted.", "warning")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/user/reactivate/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def reactivate_user(id):
+    user = db.session.get(User, id)
+    if not user or user.role != "trekker":
+        flash("Trekker not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    user.status = "approved"
+    db.session.commit()
+    flash("Trekker reactivated successfully.", "success")
+    return redirect("/admin/dashboard")
 
 
 @app.route("/staff/dashboard")
