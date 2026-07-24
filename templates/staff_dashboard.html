@@ -3,8 +3,202 @@
 {% block title %}Staff Dashboard - Trekking Management{% endblock %}
 
 {% block content %}
-<div class="p-4 bg-light rounded">
-    <h2>Welcome, {{ user.name if user else session.get('user_name', 'Trek Staff') }}</h2>
-    <p class="lead mb-0">Role: Trek Staff</p>
+{% macro status_badge(status) %}
+    {% if status == 'Open' %}
+        <span class="badge text-bg-success">Open</span>
+    {% elif status == 'Closed' %}
+        <span class="badge text-bg-warning">Closed</span>
+    {% else %}
+        <span class="badge text-bg-secondary">Completed</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro difficulty_badge(difficulty) %}
+    {% if difficulty == 'Easy' %}
+        <span class="badge text-bg-success">Easy</span>
+    {% elif difficulty == 'Moderate' %}
+        <span class="badge text-bg-warning">Moderate</span>
+    {% elif difficulty == 'Hard' %}
+        <span class="badge text-bg-danger">Hard</span>
+    {% else %}
+        <span class="badge text-bg-secondary">Not set</span>
+    {% endif %}
+{% endmacro %}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Welcome, {{ user.name if user else session.get('name', 'Trek Staff') }}</h2>
+        <p class="text-muted mb-0">Role: Trek Staff</p>
+    </div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-primary h-100">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total Assigned Treks</p>
+                <h3 class="mb-0">{{ total_assigned_treks }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-success h-100">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total Registered Trekkers</p>
+                <h3 class="mb-0">{{ total_registered_trekkers }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if selected_participant_trek %}
+    <section class="mb-5" id="selected-participants">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Participants for {{ selected_participant_trek.name }}</h4>
+            <a href="/staff/dashboard" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Trekker Name</th>
+                        <th>Email</th>
+                        <th>Booking Date</th>
+                        <th>Booking Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in selected_bookings %}
+                        <tr>
+                            <td>{{ booking.user.name }}</td>
+                            <td>{{ booking.user.email }}</td>
+                            <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                            <td><span class="badge text-bg-info">{{ booking.status }}</span></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No participants booked yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endif %}
+
+<section>
+    <h4 class="mb-3">Assigned Treks</h4>
+
+    {% if assigned_treks %}
+        <div class="row g-4">
+            {% for trek in assigned_treks %}
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">{{ trek.name }}</h5>
+                                    <p class="text-muted mb-2">{{ trek.location }}</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {{ difficulty_badge(trek.difficulty) }}
+                                        {{ status_badge(trek.status) }}
+                                        <span class="badge text-bg-light border">
+                                            {{ trek.start_date }} to {{ trek.end_date }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-lg-end">
+                                    <p class="mb-1">
+                                        <strong>Booked Trekkers:</strong> {{ trek.bookings|length }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Total Slots:</strong> {{ (trek.available_slots or 0) + (trek.bookings|length) }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Available Slots:</strong> {{ trek.available_slots or 0 }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <form method="post" action="/staff/trek/update/{{ trek.id }}" class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label">Available Slots</label>
+                                    <input type="number" class="form-control" name="available_slots" min="0"
+                                           value="{{ trek.available_slots or 0 }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" name="status" required>
+                                        <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open</option>
+                                        <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
+                                        <option value="Completed" {% if trek.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
+                                            data-bs-target="#participantsModal{{ trek.id }}">
+                                        Participants
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">No treks are assigned to you yet.</div>
+    {% endif %}
+</section>
+
+{% for trek in assigned_treks %}
+    <div class="modal fade" id="participantsModal{{ trek.id }}" tabindex="-1"
+         aria-labelledby="participantsModalLabel{{ trek.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="participantsModalLabel{{ trek.id }}">
+                        Participants - {{ trek.name }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Trekker Name</th>
+                                    <th>Email</th>
+                                    <th>Booking Date</th>
+                                    <th>Booking Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in trek.bookings %}
+                                    <tr>
+                                        <td>{{ booking.user.name }}</td>
+                                        <td>{{ booking.user.email }}</td>
+                                        <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                                        <td><span class="badge text-bg-info">{{ booking.status }}</span></td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">No participants booked yet.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="/staff/trek/participants/{{ trek.id }}" class="btn btn-outline-primary">
+                        Open Participant Page
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
 {% endblock %}

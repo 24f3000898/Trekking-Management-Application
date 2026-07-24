@@ -5,7 +5,7 @@ from functools import wraps
 from flask import Flask, flash, redirect, render_template, request, session
 from sqlalchemy import or_
 
-from models import Trek, User, db
+from models import Booking, Trek, User, db
 
 
 app = Flask(__name__)
@@ -102,6 +102,32 @@ def apply_search(query, model, name_column):
         filters.append(model.id == int(query))
 
     return model.query.filter(or_(*filters))
+
+
+def get_staff_dashboard_context(selected_participant_trek=None, selected_bookings=None):
+    user = db.session.get(User, session["user_id"])
+    assigned_treks = (
+        Trek.query.filter_by(assigned_staff_id=session["user_id"])
+        .order_by(Trek.start_date.asc())
+        .all()
+    )
+    total_registered_trekkers = sum(len(trek.bookings) for trek in assigned_treks)
+
+    return {
+        "user": user,
+        "assigned_treks": assigned_treks,
+        "total_assigned_treks": len(assigned_treks),
+        "total_registered_trekkers": total_registered_trekkers,
+        "selected_participant_trek": selected_participant_trek,
+        "selected_bookings": selected_bookings or [],
+    }
+
+
+def get_staff_assigned_trek(trek_id):
+    trek = db.session.get(Trek, trek_id)
+    if not trek or trek.assigned_staff_id != session["user_id"]:
+        return None
+    return trek
 
 
 @app.route("/")
@@ -348,8 +374,59 @@ def reactivate_user(id):
 @login_required
 @role_required("staff")
 def staff_dashboard():
-    user = db.session.get(User, session["user_id"])
-    return render_template("staff_dashboard.html", user=user)
+    return render_template("staff_dashboard.html", **get_staff_dashboard_context())
+
+
+@app.route("/staff/trek/update/<int:trek_id>", methods=["POST"])
+@login_required
+@role_required("staff")
+def update_staff_trek(trek_id):
+    trek = get_staff_assigned_trek(trek_id)
+    if not trek:
+        flash("You can update only treks assigned to you.", "danger")
+        return redirect("/staff/dashboard")
+
+    status = request.form.get("status")
+    if status not in ("Open", "Closed", "Completed"):
+        flash("Please select a valid trek status.", "danger")
+        return redirect("/staff/dashboard")
+
+    try:
+        available_slots = int(request.form.get("available_slots") or 0)
+    except ValueError:
+        flash("Please enter a valid number of available slots.", "danger")
+        return redirect("/staff/dashboard")
+
+    if available_slots < 0:
+        flash("Available slots cannot be negative.", "danger")
+        return redirect("/staff/dashboard")
+
+    trek.available_slots = available_slots
+    trek.status = status
+    db.session.commit()
+    flash("Trek details updated successfully.", "success")
+    return redirect("/staff/dashboard")
+
+
+@app.route("/staff/trek/participants/<int:trek_id>")
+@login_required
+@role_required("staff")
+def staff_trek_participants(trek_id):
+    trek = get_staff_assigned_trek(trek_id)
+    if not trek:
+        flash("You can view participants only for treks assigned to you.", "danger")
+        return redirect("/staff/dashboard")
+
+    selected_bookings = (
+        Booking.query.filter_by(trek_id=trek.id).order_by(Booking.booking_date.desc()).all()
+    )
+    return render_template(
+        "staff_dashboard.html",
+        **get_staff_dashboard_context(
+            selected_participant_trek=trek,
+            selected_bookings=selected_bookings,
+        ),
+    )
 
 
 @app.route("/user/dashboard")
