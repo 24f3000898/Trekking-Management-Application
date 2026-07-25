@@ -3,8 +3,92 @@
 {% block title %}User Dashboard - Trekking Management{% endblock %}
 
 {% block content %}
-<div class="p-4 bg-light rounded">
-    <h2>Welcome, {{ user.name if user else session.get('user_name', 'Trekker') }}</h2>
-    <p class="lead mb-0">Role: Trekker</p>
+{% macro booking_status_badge(status) %}
+    {% if status == 'Confirmed' %}
+        <span class="badge text-bg-success">Confirmed</span>
+    {% elif status == 'Cancelled' %}
+        <span class="badge text-bg-secondary">Cancelled</span>
+    {% else %}
+        <span class="badge text-bg-info">{{ status }}</span>
+    {% endif %}
+{% endmacro %}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Welcome, {{ user.name if user else session.get('name', 'Trekker') }}</h2>
+        <p class="text-muted mb-0">Role: Trekker</p>
+    </div>
+    <a href="/user/treks" class="btn btn-primary">Browse Treks</a>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-primary h-100">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total My Bookings</p>
+                <h3 class="mb-0">{{ total_bookings }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-success h-100">
+            <div class="card-body">
+                <p class="text-muted mb-1">Upcoming Treks</p>
+                <h3 class="mb-0">{{ upcoming_treks }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">My Booked Treks</h4>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Trek Name</th>
+                    <th>Location</th>
+                    <th>Dates</th>
+                    <th>Booking Status</th>
+                    <th>Booking Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.trek.name if booking.trek else 'Trek removed' }}</td>
+                        <td>{{ booking.trek.location if booking.trek else '-' }}</td>
+                        <td>
+                            {% if booking.trek %}
+                                {{ booking.trek.start_date }} to {{ booking.trek.end_date }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ booking_status_badge(booking.status) }}</td>
+                        <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <form method="post" action="/user/cancel_booking/{{ booking.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Cancel this booking?')">
+                                    Cancel Booking
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No bookings yet. <a href="/user/treks">Browse open treks</a>.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
 {% endblock %}

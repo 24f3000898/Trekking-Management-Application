@@ -434,7 +434,112 @@ def staff_trek_participants(trek_id):
 @role_required("trekker")
 def user_dashboard():
     user = db.session.get(User, session["user_id"])
-    return render_template("user_dashboard.html", user=user)
+    bookings = (
+        Booking.query.filter_by(user_id=session["user_id"])
+        .join(Trek)
+        .order_by(Trek.start_date.asc(), Booking.booking_date.desc())
+        .all()
+    )
+    upcoming_treks = sum(
+        1
+        for booking in bookings
+        if booking.trek and booking.trek.start_date and booking.trek.start_date >= date.today()
+    )
+
+    return render_template(
+        "user_dashboard.html",
+        user=user,
+        bookings=bookings,
+        total_bookings=len(bookings),
+        upcoming_treks=upcoming_treks,
+    )
+
+
+@app.route("/user/treks")
+@login_required
+@role_required("trekker")
+def browse_treks():
+    search_query = request.args.get("q", "").strip()
+    difficulty = request.args.get("difficulty", "").strip()
+
+    trek_query = Trek.query.filter(Trek.status == "Open", Trek.available_slots > 0)
+
+    if search_query:
+        search_text = f"%{search_query}%"
+        trek_query = trek_query.filter(
+            or_(Trek.name.ilike(search_text), Trek.location.ilike(search_text))
+        )
+
+    if difficulty:
+        trek_query = trek_query.filter(Trek.difficulty == difficulty)
+
+    treks = trek_query.order_by(Trek.start_date.asc(), Trek.name.asc()).all()
+
+    return render_template(
+        "browse_treks.html",
+        treks=treks,
+        search_query=search_query,
+        selected_difficulty=difficulty,
+        difficulties=["Easy", "Moderate", "Hard"],
+    )
+
+
+@app.route("/user/book/<int:trek_id>", methods=["POST"])
+@login_required
+@role_required("trekker")
+def book_trek(trek_id):
+    trek = db.session.get(Trek, trek_id)
+    if not trek:
+        flash("Trek not found.", "danger")
+        return redirect("/user/treks")
+
+    existing_booking = Booking.query.filter_by(
+        user_id=session["user_id"],
+        trek_id=trek.id,
+    ).first()
+
+    if existing_booking:
+        flash("You have already booked this trek", "warning")
+        return redirect("/user/treks")
+
+    if trek.status != "Open" or (trek.available_slots or 0) <= 0:
+        flash("No slots available", "danger")
+        return redirect("/user/treks")
+
+    trek.available_slots -= 1
+    booking = Booking(
+        user_id=session["user_id"],
+        trek_id=trek.id,
+        status="Confirmed",
+    )
+    db.session.add(booking)
+    db.session.commit()
+
+    flash("Trek booked successfully.", "success")
+    return redirect("/user/dashboard")
+
+
+@app.route("/user/cancel_booking/<int:booking_id>", methods=["POST"])
+@login_required
+@role_required("trekker")
+def cancel_booking(booking_id):
+    booking = Booking.query.filter_by(
+        id=booking_id,
+        user_id=session["user_id"],
+    ).first()
+
+    if not booking:
+        flash("Booking not found.", "danger")
+        return redirect("/user/dashboard")
+
+    if booking.trek:
+        booking.trek.available_slots = (booking.trek.available_slots or 0) + 1
+
+    db.session.delete(booking)
+    db.session.commit()
+
+    flash("Booking cancelled successfully", "info")
+    return redirect("/user/dashboard")
 
 
 if __name__ == "__main__":

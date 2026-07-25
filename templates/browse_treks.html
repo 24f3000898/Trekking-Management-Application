@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Treks - Trekking Management{% endblock %}
+
+{% block content %}
+{% macro difficulty_badge(difficulty) %}
+    {% if difficulty == 'Easy' %}
+        <span class="badge text-bg-success">Easy</span>
+    {% elif difficulty == 'Moderate' %}
+        <span class="badge text-bg-warning">Moderate</span>
+    {% elif difficulty == 'Hard' %}
+        <span class="badge text-bg-danger">Hard</span>
+    {% else %}
+        <span class="badge text-bg-secondary">{{ difficulty or 'Not set' }}</span>
+    {% endif %}
+{% endmacro %}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Browse Treks</h2>
+        <p class="text-muted mb-0">Find open treks and book your next adventure.</p>
+    </div>
+    <a href="/user/dashboard" class="btn btn-outline-secondary">My Dashboard</a>
+</div>
+
+<form method="get" action="/user/treks" class="row g-2 mb-4">
+    <div class="col-md-7">
+        <input type="text" class="form-control" name="q" value="{{ search_query }}"
+               placeholder="Search by trek name or location">
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" name="difficulty">
+            <option value="">All difficulties</option>
+            {% for difficulty in difficulties %}
+                <option value="{{ difficulty }}" {% if selected_difficulty == difficulty %}selected{% endif %}>
+                    {{ difficulty }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+{% if search_query or selected_difficulty %}
+    <div class="alert alert-info">
+        Showing filtered treks.
+        <a href="/user/treks" class="alert-link">Clear filters</a>
+    </div>
+{% endif %}
+
+{% if treks %}
+    <div class="row g-4">
+        {% for trek in treks %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h5 class="card-title mb-1">{{ trek.name }}</h5>
+                                <p class="text-muted mb-0">{{ trek.location }}</p>
+                            </div>
+                            {{ difficulty_badge(trek.difficulty) }}
+                        </div>
+
+                        <div class="border-top pt-3 mt-2">
+                            <p class="mb-2">
+                                <strong>Dates:</strong> {{ trek.start_date }} to {{ trek.end_date }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Duration:</strong> {{ trek.duration_days }} days
+                            </p>
+                            <p class="mb-2">
+                                <strong>Available Slots:</strong> {{ trek.available_slots }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Assigned Staff:</strong>
+                                {{ trek.assigned_staff.name if trek.assigned_staff else 'Not assigned' }}
+                            </p>
+                        </div>
+
+                        <form method="post" action="/user/book/{{ trek.id }}" class="mt-auto pt-3">
+                            <button type="submit" class="btn btn-success w-100">Book Trek</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-warning">
+        No open treks with available slots matched your search.
+    </div>
+{% endif %}
+{% endblock %}
