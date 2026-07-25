@@ -178,14 +178,18 @@ def is_past_or_completed_booking(booking, today):
     trek = booking.trek
     if not trek:
         return True
-    return trek.status == "Completed" or (trek.end_date and trek.end_date < today)
+    return trek.end_date and trek.end_date < today
 
 
 def is_upcoming_booking(booking, today):
     trek = booking.trek
     if not trek:
         return False
-    return trek.status != "Completed" and trek.start_date and trek.start_date >= today
+    return trek.end_date and trek.end_date >= today
+
+
+def is_active_booking(booking):
+    return booking.status in ("Booked", "Confirmed")
 
 
 def csv_download_response(csv_content, filename):
@@ -596,7 +600,9 @@ def user_dashboard():
         upcoming_bookings=upcoming_bookings,
         past_bookings=past_bookings,
         total_bookings=len(bookings),
+        upcoming_count=len(upcoming_bookings),
         upcoming_treks=len(upcoming_bookings),
+        completed_count=len(past_bookings),
     )
 
 
@@ -664,6 +670,7 @@ def book_trek(trek_id):
     return redirect("/user/dashboard")
 
 
+@app.route("/user/booking/cancel/<int:booking_id>", methods=["POST"])
 @app.route("/user/cancel_booking/<int:booking_id>", methods=["POST"])
 @login_required
 @role_required("trekker")
@@ -677,13 +684,17 @@ def cancel_booking(booking_id):
         flash("Booking not found.", "danger")
         return redirect("/user/dashboard")
 
+    if not is_active_booking(booking):
+        flash("Only active bookings can be cancelled.", "warning")
+        return redirect("/user/dashboard")
+
     if booking.trek:
         booking.trek.available_slots = (booking.trek.available_slots or 0) + 1
 
     db.session.delete(booking)
     db.session.commit()
 
-    flash("Booking cancelled successfully", "info")
+    flash("Booking cancelled successfully.", "success")
     return redirect("/user/dashboard")
 
 

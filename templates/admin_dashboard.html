@@ -185,12 +185,11 @@
                                         data-bs-target="#editTrekModal{{ trek.id }}">
                                     Edit
                                 </button>
-                                <form method="post" action="/admin/trek/delete/{{ trek.id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('Delete this trek?')">
-                                        Delete
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteTrekModal{{ trek.id }}">
+                                    Delete
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -240,9 +239,11 @@
                                     </form>
                                 {% endif %}
                                 {% if staff.status != 'blacklisted' %}
-                                    <form method="post" action="/admin/staff/blacklist/{{ staff.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Blacklist</button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#blacklistModal{{ staff.id }}">
+                                        Blacklist
+                                    </button>
                                 {% else %}
                                     <span class="text-muted">No action</span>
                                 {% endif %}
@@ -350,5 +351,57 @@
             </div>
         </div>
     </div>
+{% endfor %}
+
+{% for trek in treks %}
+    <div class="modal fade" id="deleteTrekModal{{ trek.id }}" tabindex="-1"
+         aria-labelledby="deleteTrekModalLabel{{ trek.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="/admin/trek/delete/{{ trek.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteTrekModalLabel{{ trek.id }}">
+                            Confirm Trek Deletion
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete '{{ trek.name }}'? This action cannot be undone.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+{% for staff in staff_members %}
+    {% if staff.status != 'blacklisted' %}
+        <div class="modal fade" id="blacklistModal{{ staff.id }}" tabindex="-1"
+             aria-labelledby="blacklistModalLabel{{ staff.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" action="/admin/staff/blacklist/{{ staff.id }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="blacklistModalLabel{{ staff.id }}">
+                                Confirm Staff Blacklist
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to blacklist '{{ staff.name }}'?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Confirm Blacklist</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endfor %}
 {% endblock %}
