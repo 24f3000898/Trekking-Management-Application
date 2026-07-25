@@ -92,6 +92,7 @@
     {% if assigned_treks %}
         <div class="row g-4">
             {% for trek in assigned_treks %}
+                {% set occupancy = trek_occupancy[trek.id] %}
                 <div class="col-12">
                     <div class="card shadow-sm">
                         <div class="card-body">
@@ -117,6 +118,26 @@
                                     <p class="mb-0">
                                         <strong>Available Slots:</strong> {{ trek.available_slots or 0 }}
                                     </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between gap-1 mb-2">
+                                    <span class="fw-semibold">Capacity Filled</span>
+                                    <span class="text-muted">
+                                        {{ occupancy.booked_slots }} booked /
+                                        {{ occupancy.total_slots }} total slots
+                                        ({{ occupancy.available_slots }} available)
+                                    </span>
+                                </div>
+                                <div class="progress" role="progressbar"
+                                     aria-label="Capacity filled for {{ trek.name }}"
+                                     aria-valuenow="{{ occupancy.occupancy_percentage }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar {{ occupancy.progress_class }}"
+                                         style="width: {{ occupancy.occupancy_percentage }}%">
+                                        {{ occupancy.occupancy_percentage }}%
+                                    </div>
                                 </div>
                             </div>
 

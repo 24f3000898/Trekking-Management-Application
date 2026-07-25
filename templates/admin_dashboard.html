@@ -70,7 +70,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6 col-xl-3">
         <div class="card border-primary h-100">
             <div class="card-body">
                 <p class="text-muted mb-1">Total Treks</p>
@@ -78,7 +78,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6 col-xl-3">
         <div class="card border-success h-100">
             <div class="card-body">
                 <p class="text-muted mb-1">Users & Staff</p>
@@ -86,11 +86,38 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6 col-xl-3">
         <div class="card border-warning h-100">
             <div class="card-body">
                 <p class="text-muted mb-1">Pending Staff Approvals</p>
                 <h3 class="mb-0">{{ pending_staff_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <p class="text-muted mb-1">Overall Capacity Utilization</p>
+                        <h3 class="mb-0">{{ overall_occupancy.occupancy_percentage }}%</h3>
+                    </div>
+                    <span class="badge text-bg-light border">
+                        {{ overall_occupancy.booked_slots }}/{{ overall_occupancy.total_slots }}
+                    </span>
+                </div>
+                <div class="progress mt-3" role="progressbar"
+                     aria-label="Overall capacity utilization"
+                     aria-valuenow="{{ overall_occupancy.occupancy_percentage }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar {{ overall_occupancy.progress_class }}"
+                         style="width: {{ overall_occupancy.occupancy_percentage }}%">
+                    </div>
+                </div>
+                <p class="small text-muted mb-0 mt-2">
+                    {{ overall_occupancy.booked_slots }} booked,
+                    {{ overall_occupancy.available_slots }} available
+                </p>
             </div>
         </div>
     </div>

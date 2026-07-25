@@ -106,6 +106,44 @@ def apply_search(query, model, name_column):
     return model.query.filter(or_(*filters))
 
 
+def get_progress_bar_class(occupancy_percentage):
+    if occupancy_percentage >= 80:
+        return "bg-danger"
+    if occupancy_percentage >= 50:
+        return "bg-warning"
+    return "bg-success"
+
+
+def get_trek_occupancy_metrics(trek):
+    booked_slots = len(trek.bookings)
+    available_slots = trek.available_slots or 0
+    total_slots = booked_slots + available_slots
+    occupancy_percentage = round((booked_slots / total_slots) * 100, 1) if total_slots else 0
+
+    return {
+        "booked_slots": booked_slots,
+        "available_slots": available_slots,
+        "total_slots": total_slots,
+        "occupancy_percentage": occupancy_percentage,
+        "progress_class": get_progress_bar_class(occupancy_percentage),
+    }
+
+
+def get_overall_occupancy_metrics(treks):
+    booked_slots = sum(len(trek.bookings) for trek in treks)
+    available_slots = sum(trek.available_slots or 0 for trek in treks)
+    total_slots = booked_slots + available_slots
+    occupancy_percentage = round((booked_slots / total_slots) * 100, 1) if total_slots else 0
+
+    return {
+        "booked_slots": booked_slots,
+        "available_slots": available_slots,
+        "total_slots": total_slots,
+        "occupancy_percentage": occupancy_percentage,
+        "progress_class": get_progress_bar_class(occupancy_percentage),
+    }
+
+
 def get_staff_dashboard_context(selected_participant_trek=None, selected_bookings=None):
     user = db.session.get(User, session["user_id"])
     assigned_treks = (
@@ -114,12 +152,16 @@ def get_staff_dashboard_context(selected_participant_trek=None, selected_booking
         .all()
     )
     total_registered_trekkers = sum(len(trek.bookings) for trek in assigned_treks)
+    trek_occupancy = {
+        trek.id: get_trek_occupancy_metrics(trek) for trek in assigned_treks
+    }
 
     return {
         "user": user,
         "assigned_treks": assigned_treks,
         "total_assigned_treks": len(assigned_treks),
         "total_registered_trekkers": total_registered_trekkers,
+        "trek_occupancy": trek_occupancy,
         "selected_participant_trek": selected_participant_trek,
         "selected_bookings": selected_bookings or [],
     }
@@ -258,6 +300,8 @@ def admin_dashboard():
     staff_members = staff_query.order_by(User.id.desc()).all()
     trekkers = trekker_query.order_by(User.id.desc()).all()
     approved_staff = User.query.filter_by(role="staff", status="approved").order_by(User.name).all()
+    all_treks = Trek.query.all()
+    overall_occupancy = get_overall_occupancy_metrics(all_treks)
 
     return render_template(
         "admin_dashboard.html",
@@ -271,6 +315,7 @@ def admin_dashboard():
         staff_members=staff_members,
         trekkers=trekkers,
         approved_staff=approved_staff,
+        overall_occupancy=overall_occupancy,
     )
 
 
