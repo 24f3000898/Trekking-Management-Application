@@ -13,6 +13,58 @@
     {% endif %}
 {% endmacro %}
 
+{% macro booking_table(bookings, show_cancel=False, empty_message='No bookings found.') %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Trek Name</th>
+                    <th>Location</th>
+                    <th>Dates</th>
+                    <th>Booking Status</th>
+                    <th>Booking Date</th>
+                    {% if show_cancel %}
+                        <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.trek.name if booking.trek else 'Trek removed' }}</td>
+                        <td>{{ booking.trek.location if booking.trek else '-' }}</td>
+                        <td>
+                            {% if booking.trek %}
+                                {{ booking.trek.start_date }} to {{ booking.trek.end_date }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ booking_status_badge(booking.status) }}</td>
+                        <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                        {% if show_cancel %}
+                            <td>
+                                <form method="post" action="/user/cancel_booking/{{ booking.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Cancel this booking?')">
+                                        Cancel Booking
+                                    </button>
+                                </form>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="{{ 6 if show_cancel else 5 }}" class="text-center text-muted">
+                            {{ empty_message }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h2 class="mb-1">Welcome, {{ user.name if user else session.get('name', 'Trekker') }}</h2>
@@ -45,50 +97,40 @@
         <h4 class="mb-0">My Booked Treks</h4>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Trek Name</th>
-                    <th>Location</th>
-                    <th>Dates</th>
-                    <th>Booking Status</th>
-                    <th>Booking Date</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for booking in bookings %}
-                    <tr>
-                        <td>{{ booking.trek.name if booking.trek else 'Trek removed' }}</td>
-                        <td>{{ booking.trek.location if booking.trek else '-' }}</td>
-                        <td>
-                            {% if booking.trek %}
-                                {{ booking.trek.start_date }} to {{ booking.trek.end_date }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>{{ booking_status_badge(booking.status) }}</td>
-                        <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
-                        <td>
-                            <form method="post" action="/user/cancel_booking/{{ booking.id }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                        onclick="return confirm('Cancel this booking?')">
-                                    Cancel Booking
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">
-                            No bookings yet. <a href="/user/treks">Browse open treks</a>.
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <ul class="nav nav-tabs" id="bookingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab"
+                    data-bs-target="#upcoming-treks" type="button" role="tab"
+                    aria-controls="upcoming-treks" aria-selected="true">
+                Upcoming Treks
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab"
+                    data-bs-target="#past-treks" type="button" role="tab"
+                    aria-controls="past-treks" aria-selected="false">
+                Past / Completed Treks
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content border border-top-0 p-3" id="bookingTabsContent">
+        <div class="tab-pane fade show active" id="upcoming-treks" role="tabpanel"
+             aria-labelledby="upcoming-tab" tabindex="0">
+            {{ booking_table(
+                upcoming_bookings,
+                True,
+                'No upcoming bookings. Browse open treks to book your next trek.'
+            ) }}
+        </div>
+        <div class="tab-pane fade" id="past-treks" role="tabpanel"
+             aria-labelledby="history-tab" tabindex="0">
+            {{ booking_table(
+                past_bookings,
+                False,
+                'No past or completed treks yet.'
+            ) }}
+        </div>
     </div>
 </section>
 {% endblock %}

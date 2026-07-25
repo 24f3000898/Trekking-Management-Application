@@ -37,7 +37,7 @@ def role_required(role_name):
         @wraps(function)
         def wrapper(*args, **kwargs):
             if session.get("role") != role_name:
-                flash("You are not allowed to access this page.", "danger")
+                flash("Unauthorized access", "warning")
                 return redirect(get_dashboard_url(session.get("role")))
             return function(*args, **kwargs)
 
@@ -128,6 +128,20 @@ def get_staff_assigned_trek(trek_id):
     if not trek or trek.assigned_staff_id != session["user_id"]:
         return None
     return trek
+
+
+def is_past_or_completed_booking(booking, today):
+    trek = booking.trek
+    if not trek:
+        return True
+    return trek.status == "Completed" or (trek.end_date and trek.end_date < today)
+
+
+def is_upcoming_booking(booking, today):
+    trek = booking.trek
+    if not trek:
+        return False
+    return trek.status != "Completed" and trek.start_date and trek.start_date >= today
 
 
 @app.route("/")
@@ -434,24 +448,27 @@ def staff_trek_participants(trek_id):
 @role_required("trekker")
 def user_dashboard():
     user = db.session.get(User, session["user_id"])
+    today = date.today()
     bookings = (
         Booking.query.filter_by(user_id=session["user_id"])
         .join(Trek)
         .order_by(Trek.start_date.asc(), Booking.booking_date.desc())
         .all()
     )
-    upcoming_treks = sum(
-        1
-        for booking in bookings
-        if booking.trek and booking.trek.start_date and booking.trek.start_date >= date.today()
-    )
+    upcoming_bookings = [
+        booking for booking in bookings if is_upcoming_booking(booking, today)
+    ]
+    past_bookings = [
+        booking for booking in bookings if is_past_or_completed_booking(booking, today)
+    ]
 
     return render_template(
         "user_dashboard.html",
         user=user,
-        bookings=bookings,
+        upcoming_bookings=upcoming_bookings,
+        past_bookings=past_bookings,
         total_bookings=len(bookings),
-        upcoming_treks=upcoming_treks,
+        upcoming_treks=len(upcoming_bookings),
     )
 
 
