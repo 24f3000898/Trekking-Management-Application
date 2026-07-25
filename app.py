@@ -1,8 +1,10 @@
+import csv
+import io
 import os
 from datetime import date
 from functools import wraps
 
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, Response, flash, redirect, render_template, request, session
 from sqlalchemy import or_
 
 from models import Booking, Trek, User, db
@@ -142,6 +144,14 @@ def is_upcoming_booking(booking, today):
     if not trek:
         return False
     return trek.status != "Completed" and trek.start_date and trek.start_date >= today
+
+
+def csv_download_response(csv_content, filename):
+    return Response(
+        csv_content,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @app.route("/")
@@ -384,6 +394,45 @@ def reactivate_user(id):
     return redirect("/admin/dashboard")
 
 
+@app.route("/admin/export/bookings")
+@login_required
+@role_required("admin")
+def export_bookings():
+    bookings = (
+        Booking.query.join(Booking.user)
+        .join(Booking.trek)
+        .order_by(Booking.booking_date.desc())
+        .all()
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "Booking ID",
+            "Trek Name",
+            "Trekker Name",
+            "Trekker Email",
+            "Booking Date",
+            "Status",
+        ]
+    )
+
+    for booking in bookings:
+        writer.writerow(
+            [
+                booking.id,
+                booking.trek.name,
+                booking.user.name,
+                booking.user.email,
+                booking.booking_date.strftime("%Y-%m-%d %H:%M:%S"),
+                booking.status,
+            ]
+        )
+
+    return csv_download_response(output.getvalue(), "all_bookings.csv")
+
+
 @app.route("/staff/dashboard")
 @login_required
 @role_required("staff")
@@ -441,6 +490,40 @@ def staff_trek_participants(trek_id):
             selected_bookings=selected_bookings,
         ),
     )
+
+
+@app.route("/staff/export/participants/<int:trek_id>")
+@login_required
+@role_required("staff")
+def export_participants(trek_id):
+    trek = get_staff_assigned_trek(trek_id)
+    if not trek:
+        flash("You can export participants only for treks assigned to you.", "danger")
+        return redirect("/staff/dashboard")
+
+    bookings = (
+        Booking.query.filter_by(trek_id=trek.id)
+        .join(Booking.user)
+        .order_by(Booking.booking_date.desc())
+        .all()
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Trekker Name", "Email", "Booking Date", "Status"])
+
+    for booking in bookings:
+        writer.writerow(
+            [
+                booking.user.name,
+                booking.user.email,
+                booking.booking_date.strftime("%Y-%m-%d %H:%M:%S"),
+                booking.status,
+            ]
+        )
+
+    filename = f"participants_trek_{trek.id}.csv"
+    return csv_download_response(output.getvalue(), filename)
 
 
 @app.route("/user/dashboard")

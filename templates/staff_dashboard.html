@@ -134,12 +134,15 @@
                                         <option value="Completed" {% if trek.status == 'Completed' %}selected{% endif %}>Completed</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4 d-flex gap-2">
+                                <div class="col-md-4 d-flex flex-wrap gap-2">
                                     <button type="submit" class="btn btn-primary">Update</button>
                                     <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
                                             data-bs-target="#participantsModal{{ trek.id }}">
                                         Participants
                                     </button>
+                                    <a href="/staff/export/participants/{{ trek.id }}" class="btn btn-outline-success">
+                                        Download Participant CSV
+                                    </a>
                                 </div>
                             </form>
                         </div>
