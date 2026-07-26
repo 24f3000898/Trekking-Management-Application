@@ -71,54 +71,47 @@
 
 <div class="row g-3 mb-4">
     <div class="col-md-6 col-xl-3">
-        <div class="card border-primary h-100">
-            <div class="card-body">
-                <p class="text-muted mb-1">Total Treks</p>
-                <h3 class="mb-0">{{ total_treks }}</h3>
-            </div>
+        <div class="stat-card shadow-sm h-100">
+            <p class="stat-label">Total Treks</p>
+            <div class="stat-value">{{ total_treks }}</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
-        <div class="card border-success h-100">
-            <div class="card-body">
-                <p class="text-muted mb-1">Users & Staff</p>
-                <h3 class="mb-0">{{ total_trekkers }} Trekkers / {{ total_staff }} Staff</h3>
-            </div>
+        <div class="stat-card shadow-sm h-100">
+            <p class="stat-label">Users & Staff</p>
+            <div class="stat-value">{{ total_trekkers }} / {{ total_staff }}</div>
+            <p class="text-muted small mb-0">Trekkers / Staff</p>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
-        <div class="card border-warning h-100">
-            <div class="card-body">
-                <p class="text-muted mb-1">Pending Staff Approvals</p>
-                <h3 class="mb-0">{{ pending_staff_count }}</h3>
-            </div>
+        <div class="stat-card shadow-sm h-100">
+            <p class="stat-label">Pending Staff Approvals</p>
+            <div class="stat-value">{{ pending_staff_count }}</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
-        <div class="card border-info h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                    <div>
-                        <p class="text-muted mb-1">Overall Capacity Utilization</p>
-                        <h3 class="mb-0">{{ overall_occupancy.occupancy_percentage }}%</h3>
-                    </div>
-                    <span class="badge text-bg-light border">
-                        {{ overall_occupancy.booked_slots }}/{{ overall_occupancy.total_slots }}
-                    </span>
+        <div class="stat-card shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <p class="stat-label">Overall Capacity Utilization</p>
+                    <div class="stat-value">{{ overall_occupancy.occupancy_percentage }}%</div>
                 </div>
-                <div class="progress mt-3" role="progressbar"
-                     aria-label="Overall capacity utilization"
-                     aria-valuenow="{{ overall_occupancy.occupancy_percentage }}"
-                     aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar {{ overall_occupancy.progress_class }}"
-                         style="width: {{ overall_occupancy.occupancy_percentage }}%">
-                    </div>
-                </div>
-                <p class="small text-muted mb-0 mt-2">
-                    {{ overall_occupancy.booked_slots }} booked,
-                    {{ overall_occupancy.available_slots }} available
-                </p>
+                <span class="badge rounded-pill px-3 py-2 text-bg-light border">
+                    {{ overall_occupancy.booked_slots }}/{{ overall_occupancy.total_slots }}
+                </span>
             </div>
+            <div class="progress mt-3" role="progressbar"
+                 aria-label="Overall capacity utilization"
+                 aria-valuenow="{{ overall_occupancy.occupancy_percentage }}"
+                 aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar {{ overall_occupancy.progress_class }}"
+                     style="width: {{ overall_occupancy.occupancy_percentage }}%">
+                </div>
+            </div>
+            <p class="small text-muted mb-0 mt-2">
+                {{ overall_occupancy.booked_slots }} booked,
+                {{ overall_occupancy.available_slots }} available
+            </p>
         </div>
     </div>
 </div>
@@ -146,7 +139,7 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
+        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -168,11 +161,11 @@
                         <td>{{ trek.location }}</td>
                         <td>
                             {% if trek.difficulty == 'Easy' %}
-                                <span class="badge text-bg-success">Easy</span>
+                                <span class="badge rounded-pill px-3 py-2 difficulty-easy">Easy</span>
                             {% elif trek.difficulty == 'Moderate' %}
-                                <span class="badge text-bg-warning">Moderate</span>
+                                <span class="badge rounded-pill px-3 py-2 difficulty-moderate">Moderate</span>
                             {% else %}
-                                <span class="badge text-bg-danger">{{ trek.difficulty }}</span>
+                                <span class="badge rounded-pill px-3 py-2 difficulty-hard">{{ trek.difficulty }}</span>
                             {% endif %}
                         </td>
                         <td>{{ trek.duration_days }} days</td>
@@ -180,7 +173,7 @@
                         <td>{{ trek.start_date }} to {{ trek.end_date }}</td>
                         <td>{{ trek.assigned_staff.name if trek.assigned_staff else 'Not assigned' }}</td>
                         <td>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                         data-bs-target="#editTrekModal{{ trek.id }}">
                                     Edit
@@ -206,7 +199,7 @@
 <section class="mb-5" id="users">
     <h4 class="mb-3">Trek Staff Management</h4>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
+        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -224,15 +217,15 @@
                         <td>{{ staff.email }}</td>
                         <td>
                             {% if staff.status == 'approved' %}
-                                <span class="badge text-bg-success">approved</span>
+                                <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
                             {% elif staff.status == 'pending' %}
-                                <span class="badge text-bg-warning">pending</span>
+                                <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
                             {% else %}
-                                <span class="badge text-bg-danger">blacklisted</span>
+                                <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
                             {% endif %}
                         </td>
                         <td>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
                                 {% if staff.status == 'pending' %}
                                     <form method="post" action="/admin/staff/approve/{{ staff.id }}">
                                         <button type="submit" class="btn btn-sm btn-success">Approve</button>
@@ -263,7 +256,7 @@
 <section class="mb-5">
     <h4 class="mb-3">Trekker Management</h4>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
+        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -281,11 +274,11 @@
                         <td>{{ trekker.email }}</td>
                         <td>
                             {% if trekker.status == 'approved' %}
-                                <span class="badge text-bg-success">approved</span>
+                                <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
                             {% elif trekker.status == 'pending' %}
-                                <span class="badge text-bg-warning">pending</span>
+                                <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
                             {% else %}
-                                <span class="badge text-bg-danger">blacklisted</span>
+                                <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
                             {% endif %}
                         </td>
                         <td>
