@@ -202,9 +202,15 @@ def csv_download_response(csv_content, filename):
 
 @app.route("/")
 def home():
+    return render_template("index.html")
+
+
+@app.route("/treks")
+def public_treks():
     if "user_id" in session:
-        return redirect(get_dashboard_url(session.get("role")))
+        return redirect("/user/treks")
     return redirect("/login")
+
 
 
 @app.route("/register", methods=["GET", "POST"])

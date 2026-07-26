@@ -27,22 +27,32 @@
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="mb-1">Welcome, {{ user.name if user else session.get('name', 'Trek Staff') }}</h2>
+        <h2 class="fw-bold mb-1">Welcome, {{ user.name if user else session.get('name', 'Trek Staff') }}</h2>
         <p class="text-muted mb-0">Role: Trek Staff</p>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="stat-card shadow-sm h-100">
-            <p class="stat-label">Total Assigned Treks</p>
-            <div class="stat-value">{{ total_assigned_treks }}</div>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-1">Total Assigned Treks</p>
+                <h3 class="fw-bold mb-0">{{ total_assigned_treks }}</h3>
+            </div>
+            <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                <span class="fs-4">🏔️</span>
+            </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="stat-card shadow-sm h-100">
-            <p class="stat-label">Total Registered Trekkers</p>
-            <div class="stat-value">{{ total_registered_trekkers }}</div>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-1">Registered Trekkers</p>
+                <h3 class="fw-bold mb-0">{{ total_registered_trekkers }}</h3>
+            </div>
+            <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                <span class="fs-4">👥</span>
+            </div>
         </div>
     </div>
 </div>
@@ -50,12 +60,12 @@
 {% if selected_participant_trek %}
     <section class="mb-5" id="selected-participants">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Participants for {{ selected_participant_trek.name }}</h4>
-            <a href="/staff/dashboard" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+            <h4 class="fw-bold mb-0">Participants for {{ selected_participant_trek.name }}</h4>
+            <a href="/staff/dashboard" class="btn btn-sm btn-outline-secondary rounded-3">Back to Dashboard</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>Trekker Name</th>
                         <th>Email</th>
@@ -83,107 +93,85 @@
 {% endif %}
 
 <section id="my-treks">
-    <h4 class="mb-3">Assigned Treks</h4>
+    <h4 class="fw-bold mb-3">Assigned Treks</h4>
 
     {% if assigned_treks %}
-        <div class="row g-4">
-            {% for trek in assigned_treks %}
-                {% set occupancy = trek_occupancy[trek.id] %}
-                <div class="col-12">
-                    <div class="trek-card assigned-trek-card shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="row align-items-start g-3">
-                                <div class="col-md-7 col-lg-8">
-                                    <h5 class="card-title mb-1 fw-bold">{{ trek.name }}</h5>
-                                    <p class="text-muted mb-3">{{ trek.location }}</p>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {{ difficulty_badge(trek.difficulty) }}
-                                        {{ status_badge(trek.status) }}
-                                        <span class="badge rounded-pill px-3 py-2 text-bg-light border">
-                                            {{ trek.start_date }} to {{ trek.end_date }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="col-md-5 col-lg-4 text-md-end">
-                                    <div class="slot-summary bg-light p-3 rounded-3 text-dark small d-inline-flex flex-wrap justify-content-md-end gap-2">
-                                        <span><strong>Booked:</strong> {{ occupancy.booked_slots }}</span>
-                                        <span class="text-muted d-none d-sm-inline">|</span>
-                                        <span><strong>Available:</strong> {{ occupancy.available_slots }}</span>
-                                        <span class="text-muted d-none d-sm-inline">|</span>
-                                        <span><strong>Total:</strong> {{ occupancy.total_slots }}</span>
-                                    </div>
-                                </div>
-                            </div>
+        {% for trek in assigned_treks %}
+            {% set occupancy = trek_occupancy[trek.id] %}
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="fw-bold mb-0">{{ trek.name }}</h5>
+                            {{ status_badge(trek.status) }}
+                            {{ difficulty_badge(trek.difficulty) }}
+                        </div>
+                        <p class="text-muted small mb-0">
+                            📍 {{ trek.location }} <span class="mx-1">•</span> {{ trek.start_date }} to {{ trek.end_date }}
+                        </p>
+                    </div>
+                    <div class="bg-light p-2 px-3 rounded-3 text-secondary small fw-medium">
+                        <span><strong>Booked:</strong> {{ occupancy.booked_slots }}</span>
+                        <span class="mx-1">|</span>
+                        <span><strong>Available:</strong> {{ occupancy.available_slots }}</span>
+                        <span class="mx-1">|</span>
+                        <span><strong>Total:</strong> {{ occupancy.total_slots }}</span>
+                    </div>
+                </div>
 
-                            <div class="capacity-panel bg-light border rounded-3 p-3 my-4">
-                                <div class="d-flex flex-column flex-sm-row justify-content-between gap-1 mb-2">
-                                    <span class="fw-semibold">Capacity Filled</span>
-                                    <span class="text-muted small">
-                                        {{ occupancy.booked_slots }} booked /
-                                        {{ occupancy.total_slots }} total slots
-                                        ({{ occupancy.available_slots }} available)
-                                    </span>
-                                </div>
-                                <div class="progress" role="progressbar"
-                                     aria-label="Capacity filled for {{ trek.name }}"
-                                     aria-valuenow="{{ occupancy.occupancy_percentage }}"
-                                     aria-valuemin="0" aria-valuemax="100"
-                                     style="height: 10px;">
-                                    <div class="progress-bar {{ occupancy.progress_class }}"
-                                         data-occupancy-width="{{ occupancy.occupancy_percentage }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <form method="post" action="/staff/trek/update/{{ trek.id }}"
-                                  class="row align-items-end g-3 pt-3 border-top">
-                                <div class="col-lg-7">
-                                    <div class="d-flex flex-wrap align-items-end gap-3">
-                                        <div>
-                                            <label class="form-label small fw-semibold mb-1"
-                                                   for="availableSlots{{ trek.id }}">
-                                                Available Slots
-                                            </label>
-                                            <input type="number" class="form-control form-control-sm" name="available_slots"
-                                                   id="availableSlots{{ trek.id }}" min="0"
-                                                   value="{{ trek.available_slots or 0 }}"
-                                                   style="max-width: 110px;" required>
-                                        </div>
-
-                                        <div>
-                                            <label class="form-label small fw-semibold mb-1" for="trekStatus{{ trek.id }}">
-                                                Status
-                                            </label>
-                                            <select class="form-select form-select-sm" name="status"
-                                                    id="trekStatus{{ trek.id }}"
-                                                    style="max-width: 130px;" required>
-                                        <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open</option>
-                                        <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
-                                        <option value="Completed" {% if trek.status == 'Completed' %}selected{% endif %}>Completed</option>
-                                            </select>
-                                        </div>
-
-                                        <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-5">
-                                    <div class="ms-auto d-flex flex-wrap justify-content-lg-end gap-2">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
-                                            data-bs-target="#participantsModal{{ trek.id }}">
-                                            Participants
-                                        </button>
-                                        <a href="/staff/export/participants/{{ trek.id }}" class="btn btn-outline-success btn-sm">
-                                            Download Participant CSV
-                                        </a>
-                                    </div>
-                                </div>
-                            </form>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small fw-medium">Capacity Filled</span>
+                        <span class="text-muted small fw-medium">
+                            {{ occupancy.booked_slots }} booked / {{ occupancy.total_slots }} total ({{ occupancy.available_slots }} available)
+                        </span>
+                    </div>
+                    <div class="progress" role="progressbar"
+                         aria-label="Capacity filled for {{ trek.name }}"
+                         aria-valuenow="{{ occupancy.occupancy_percentage }}"
+                         aria-valuemin="0" aria-valuemax="100"
+                         style="height: 8px; border-radius: 10px;">
+                        <div class="progress-bar bg-emerald"
+                             data-occupancy-width="{{ occupancy.occupancy_percentage }}"
+                             style="border-radius: 10px;">
                         </div>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
+
+                <form method="post" action="/staff/trek/update/{{ trek.id }}" class="mt-3 d-flex flex-wrap align-items-center gap-3 pt-3 border-top">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label small fw-semibold mb-0" for="availableSlots{{ trek.id }}">Slots:</label>
+                        <input type="number" class="form-control form-control-sm rounded-3" name="available_slots"
+                               id="availableSlots{{ trek.id }}" min="0"
+                               value="{{ trek.available_slots or 0 }}"
+                               style="max-width: 100px;" required>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label small fw-semibold mb-0" for="trekStatus{{ trek.id }}">Status:</label>
+                        <select class="form-select form-select-sm rounded-3" name="status"
+                                id="trekStatus{{ trek.id }}"
+                                style="max-width: 130px;" required>
+                            <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open</option>
+                            <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
+                            <option value="Completed" {% if trek.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-emerald btn-sm rounded-3 px-3">Update</button>
+
+                    <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-3" data-bs-toggle="modal"
+                                data-bs-target="#participantsModal{{ trek.id }}">
+                            Participants
+                        </button>
+                        <a href="/staff/export/participants/{{ trek.id }}" class="btn btn-outline-secondary btn-sm rounded-3">
+                            Download Participant CSV
+                        </a>
+                    </div>
+                </form>
+            </div>
+        {% endfor %}
     {% else %}
         <div class="alert alert-info">No treks are assigned to you yet.</div>
     {% endif %}
@@ -193,9 +181,9 @@
     <div class="modal fade" id="participantsModal{{ trek.id }}" tabindex="-1"
          aria-labelledby="participantsModalLabel{{ trek.id }}" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="participantsModalLabel{{ trek.id }}">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="participantsModalLabel{{ trek.id }}">
                         Participants - {{ trek.name }}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -203,7 +191,7 @@
                 <div class="modal-body">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
                                     <th>Trekker Name</th>
                                     <th>Email</th>
@@ -228,16 +216,17 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <a href="/staff/trek/participants/{{ trek.id }}" class="btn btn-outline-primary">
+                <div class="modal-footer border-top">
+                    <a href="/staff/trek/participants/{{ trek.id }}" class="btn btn-outline-primary rounded-3 btn-sm">
                         Open Participant Page
                     </a>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary rounded-3 btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 {% endfor %}
+
 <script>
     document.querySelectorAll("[data-occupancy-width]").forEach((progressBar) => {
         progressBar.style.width = `${progressBar.dataset.occupancyWidth}%`;

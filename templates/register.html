@@ -3,46 +3,55 @@
 {% block title %}Register - Trekking Management{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-7 col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title text-center mb-4">Register</h3>
+<div class="row justify-content-center py-4">
+    <div class="col-12 d-flex justify-content-center">
+        <div class="card border-0 p-4 w-100" style="max-width: 440px; border-radius: 20px; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.07); border: 1px solid #e2e8f0; background-color: #ffffff;">
+            <div class="card-body p-2">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <span class="brand-badge mb-3">TM</span>
+                    <h2 class="fw-bold h4 mb-1">Create an account</h2>
+                    <p class="text-secondary small">Join our community of trekkers and outdoor guides</p>
+                </div>
 
+                <!-- Form -->
                 <form method="post" action="/register">
                     <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+                        <label for="name" class="form-label small fw-semibold text-dark mb-1">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required style="border-radius: 10px; padding: 0.75rem 1rem; border-color: #cbd5e1;">
                     </div>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="email" class="form-label small fw-semibold text-dark mb-1">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required style="border-radius: 10px; padding: 0.75rem 1rem; border-color: #cbd5e1;">
                     </div>
 
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="password" class="form-label small fw-semibold text-dark mb-1">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required style="border-radius: 10px; padding: 0.75rem 1rem; border-color: #cbd5e1;">
                     </div>
 
                     <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-select" id="role" name="role" required>
+                        <label for="role" class="form-label small fw-semibold text-dark mb-1">Role</label>
+                        <select class="form-select" id="role" name="role" required style="border-radius: 10px; padding: 0.75rem 1rem; border-color: #cbd5e1;">
                             <option value="trekker">Trekker</option>
                             <option value="staff">Trek Staff</option>
                         </select>
                     </div>
 
-                    <p class="text-muted small">
+                    <p class="text-muted small mb-4">
                         Note: Trek Staff registrations require Admin approval before login.
                     </p>
 
-                    <button type="submit" class="btn btn-success w-100">Register</button>
+                    <button type="submit" class="btn btn-emerald w-100 py-2.5 rounded-3 fw-bold">Create Account</button>
                 </form>
 
-                <p class="text-center mt-3 mb-0">
-                    Already registered? <a href="/login">Login here</a>
-                </p>
+                <!-- Footer link -->
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-0">
+                        Already registered? <a href="/login" class="text-emerald fw-semibold text-decoration-none">Login here</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>

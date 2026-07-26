@@ -4,51 +4,55 @@
 
 {% block content %}
 {% macro booking_status_badge(status) %}
-    {% if status == 'Confirmed' %}
-        <span class="badge rounded-pill px-3 py-2 status-confirmed">Confirmed</span>
+    {% if status == 'Confirmed' or status == 'Booked' %}
+        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-semibold">Confirmed</span>
     {% elif status == 'Completed' %}
-        <span class="badge rounded-pill px-3 py-2 status-completed">Completed</span>
+        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2 fw-semibold">Completed</span>
     {% elif status == 'Cancelled' %}
-        <span class="badge rounded-pill px-3 py-2 status-cancelled">Cancelled</span>
+        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 fw-semibold">Cancelled</span>
     {% else %}
-        <span class="badge rounded-pill px-3 py-2 text-bg-info">{{ status }}</span>
+        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-semibold">{{ status }}</span>
     {% endif %}
 {% endmacro %}
 
 {% macro booking_table(bookings, empty_message='No bookings found.') %}
-    <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-dark text-white">
+                <thead class="bg-light border-bottom text-secondary">
                     <tr>
-                        <th>Trek Name</th>
-                        <th>Location</th>
-                        <th>Dates</th>
-                        <th>Booking Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Trek Name</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Location</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Dates</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Booking Date</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Status</th>
+                        <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary text-end">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="align-middle">
                     {% for booking in bookings %}
-                        <tr>
-                            <td>{{ booking.trek.name if booking.trek else 'Trek removed' }}</td>
-                            <td>{{ booking.trek.location if booking.trek else '-' }}</td>
-                            <td>
+                        <tr class="border-bottom">
+                            <td class="py-3 px-3 fw-bold text-dark">{{ booking.trek.name if booking.trek else 'Trek removed' }}</td>
+                            <td class="py-3 px-3 text-muted">📍 {{ booking.trek.location if booking.trek else '-' }}</td>
+                            <td class="py-3 px-3 text-muted">
                                 {% if booking.trek %}
-                                    {{ booking.trek.start_date }} to {{ booking.trek.end_date }}
+                                    📅 {{ booking.trek.start_date }} to {{ booking.trek.end_date }}
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
-                            <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
-                            <td>{{ booking_status_badge(booking.status) }}</td>
-                            <td><span class="text-muted">-</span></td>
+                            <td class="py-3 px-3 text-muted">{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                            <td class="py-3 px-3">{{ booking_status_badge(booking.status) }}</td>
+                            <td class="py-3 px-3 text-end"><span class="text-muted small">-</span></td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                {{ empty_message }}
+                            <td colspan="6" class="text-center py-5">
+                                <div class="my-3">
+                                    <span class="fs-1 d-block mb-2">🏔️</span>
+                                    <h5 class="fw-bold text-dark mb-1">No past treks</h5>
+                                    <p class="text-muted small mb-0">{{ empty_message }}</p>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
@@ -58,86 +62,116 @@
     </div>
 {% endmacro %}
 
-<section class="bg-white border rounded-4 shadow-sm p-4 p-lg-5 mb-4">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-4">
-        <div>
-            <p class="metadata-label mb-2">Trekker dashboard</p>
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                <h1 class="h2 fw-bold mb-0">Welcome, {{ user.name if user else session.get('name', 'Trekker') }}</h1>
-                <span class="badge rounded-pill text-bg-light border text-dark px-3 py-2">Trekker</span>
+<!-- Welcome Header Card -->
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-emerald text-white fw-bold d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 shadow-sm" style="width: 52px; height: 52px; font-size: 1.25rem;">
+                {{ (user.name[0] if user and user.name else 'T') | upper }}
             </div>
-            <p class="text-muted mb-0">Track upcoming adventures, review past bookings, and plan your next trail.</p>
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-1">Welcome back, {{ user.name if user else session.get('name', 'Trekker') }}</h1>
+                <p class="text-muted mb-0">Track your upcoming expeditions, review past itineraries, and manage reservations.</p>
+            </div>
         </div>
-        <a href="/user/treks" class="btn btn-emerald">Browse All Treks</a>
+        <a href="/user/treks" class="btn btn-emerald rounded-3 px-4 py-2 fw-semibold flex-shrink-0">
+            Browse Treks
+        </a>
     </div>
-</section>
+</div>
 
+<!-- Stat Cards Polish -->
 <div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="stat-card shadow-sm rounded-3 h-100">
-            <p class="stat-label">Total Bookings</p>
-            <div class="stat-value">{{ total_bookings }}</div>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-uppercase fs-7 fw-semibold text-muted d-block mb-1" style="letter-spacing: 0.05em;">TOTAL BOOKINGS</span>
+                <span class="display-6 fw-bold text-dark mb-0">{{ total_bookings }}</span>
+            </div>
+            <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.5rem;">
+                🥾
+            </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="stat-card shadow-sm rounded-3 h-100">
-            <p class="stat-label">Upcoming Treks</p>
-            <div class="stat-value">{{ upcoming_treks }}</div>
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-uppercase fs-7 fw-semibold text-muted d-block mb-1" style="letter-spacing: 0.05em;">UPCOMING TREKS</span>
+                <span class="display-6 fw-bold text-dark mb-0">{{ upcoming_count if upcoming_count is defined else upcoming_treks }}</span>
+            </div>
+            <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.5rem;">
+                📅
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Schedule Navigation & Bookings Section -->
 <section>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <p class="metadata-label mb-1">My bookings</p>
-            <h2 class="h4 fw-bold mb-0">Your Trek Schedule</h2>
-        </div>
+    <div class="mb-3">
+        <p class="metadata-label mb-1">My Bookings</p>
+        <h2 class="h4 fw-bold mb-0">Your Trek Schedule</h2>
     </div>
 
-    <ul class="nav nav-pills gap-2 mb-3" id="bookingTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab"
-                    data-bs-target="#upcoming-treks" type="button" role="tab"
-                    aria-controls="upcoming-treks" aria-selected="true">
-                Upcoming Treks
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="history-tab" data-bs-toggle="tab"
-                    data-bs-target="#past-treks" type="button" role="tab"
-                    aria-controls="past-treks" aria-selected="false">
-                Past Treks
-            </button>
-        </li>
-    </ul>
+    <!-- Segmented Tab Navigation -->
+    <div class="d-inline-flex bg-light p-1 rounded-pill border mb-3 segmented-tabs">
+        <ul class="nav nav-pills border-0" id="bookingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active btn btn-emerald rounded-pill px-4 py-1.5 fw-bold" 
+                        id="upcoming-tab" 
+                        data-bs-toggle="tab"
+                        data-bs-target="#upcoming-treks" 
+                        type="button" 
+                        role="tab"
+                        aria-controls="upcoming-treks" 
+                        aria-selected="true">
+                    Upcoming Treks
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn text-secondary rounded-pill px-4 py-1.5 fw-medium border-0" 
+                        id="history-tab" 
+                        data-bs-toggle="tab"
+                        data-bs-target="#past-treks" 
+                        type="button" 
+                        role="tab"
+                        aria-controls="past-treks" 
+                        aria-selected="false">
+                    Past Treks
+                </button>
+            </li>
+        </ul>
+    </div>
 
+    <!-- Tab Content -->
     <div class="tab-content" id="bookingTabsContent">
+        <!-- Upcoming Treks Tab -->
         <div class="tab-pane fade show active" id="upcoming-treks" role="tabpanel"
              aria-labelledby="upcoming-tab" tabindex="0">
-            <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-dark text-white">
+                        <thead class="bg-light border-bottom text-secondary">
                             <tr>
-                                <th>Trek Name</th>
-                                <th>Location</th>
-                                <th>Trek Dates</th>
-                                <th>Booking Date</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Trek Name</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Location</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Trek Dates</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Booking Date</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary">Status</th>
+                                <th class="text-uppercase fs-7 fw-bold tracking-wider py-3 px-3 text-secondary text-end">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="align-middle">
                             {% for booking in upcoming_bookings %}
-                                <tr>
-                                    <td>{{ booking.trek.name }}</td>
-                                    <td>{{ booking.trek.location }}</td>
-                                    <td>{{ booking.trek.start_date }} to {{ booking.trek.end_date }}</td>
-                                    <td>{{ booking.booking_date.strftime('%d %b %Y') }}</td>
-                                    <td>{{ booking_status_badge(booking.status) }}</td>
-                                    <td>
-                                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                                <tr class="border-bottom">
+                                    <td class="py-3 px-3 fw-bold text-dark">{{ booking.trek.name }}</td>
+                                    <td class="py-3 px-3 text-muted">📍 {{ booking.trek.location }}</td>
+                                    <td class="py-3 px-3 text-muted">📅 {{ booking.trek.start_date }} to {{ booking.trek.end_date }}</td>
+                                    <td class="py-3 px-3 text-muted">{{ booking.booking_date.strftime('%d %b %Y') }}</td>
+                                    <td class="py-3 px-3">{{ booking_status_badge(booking.status) }}</td>
+                                    <td class="py-3 px-3 text-end">
+                                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-medium" 
+                                                data-bs-toggle="modal"
                                                 data-bs-target="#cancelBookingModal{{ booking.id }}">
                                             Cancel Booking
                                         </button>
@@ -145,8 +179,14 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">
-                                        No upcoming bookings. Browse open treks to book your next trek.
+                                    <!-- Empty State Component -->
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="my-3">
+                                            <span class="fs-1 d-block mb-2">🥾</span>
+                                            <h5 class="fw-bold text-dark mb-1">No upcoming treks found</h5>
+                                            <p class="text-muted small mb-3">You haven't booked any upcoming expeditions yet.</p>
+                                            <a href="/user/treks" class="btn btn-emerald rounded-3 px-4 fw-bold">Explore Treks</a>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -154,28 +194,29 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Cancel Booking Modals -->
             {% for booking in upcoming_bookings %}
                 <div class="modal fade" id="cancelBookingModal{{ booking.id }}" tabindex="-1"
                      aria-labelledby="cancelBookingModalLabel{{ booking.id }}" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="cancelBookingModalLabel{{ booking.id }}">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 border-0 shadow">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="cancelBookingModalLabel{{ booking.id }}">
                                     Confirm Booking Cancellation
                                 </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body">
+                            <div class="modal-body py-4">
                                 Are you sure you want to cancel your booking for
-                                <strong>{{ booking.trek.name }}</strong>? Your slot will be released.
+                                <strong>{{ booking.trek.name }}</strong>? Your slot will be released for other trekkers.
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    Close
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-light rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">
+                                    Keep Booking
                                 </button>
                                 <form method="post" action="{{ url_for('cancel_booking', booking_id=booking.id) }}">
-                                    <button type="submit" class="btn btn-danger">
+                                    <button type="submit" class="btn btn-danger rounded-3 px-4 fw-bold">
                                         Confirm Cancellation
                                     </button>
                                 </form>
@@ -185,6 +226,8 @@
                 </div>
             {% endfor %}
         </div>
+
+        <!-- Past Treks Tab -->
         <div class="tab-pane fade" id="past-treks" role="tabpanel"
              aria-labelledby="history-tab" tabindex="0">
             {{ booking_table(

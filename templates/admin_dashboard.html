@@ -6,42 +6,42 @@
 {% macro trek_form_fields(trek=None) %}
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label">Name</label>
-            <input type="text" class="form-control" name="name" value="{{ trek.name if trek else '' }}" required>
+            <label class="form-label fw-semibold small">Name</label>
+            <input type="text" class="form-control rounded-3" name="name" value="{{ trek.name if trek else '' }}" required>
         </div>
         <div class="col-md-6">
-            <label class="form-label">Location</label>
-            <input type="text" class="form-control" name="location" value="{{ trek.location if trek else '' }}" required>
+            <label class="form-label fw-semibold small">Location</label>
+            <input type="text" class="form-control rounded-3" name="location" value="{{ trek.location if trek else '' }}" required>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Difficulty</label>
-            <select class="form-select" name="difficulty" required>
+            <label class="form-label fw-semibold small">Difficulty</label>
+            <select class="form-select rounded-3" name="difficulty" required>
                 <option value="Easy" {% if trek and trek.difficulty == 'Easy' %}selected{% endif %}>Easy</option>
                 <option value="Moderate" {% if trek and trek.difficulty == 'Moderate' %}selected{% endif %}>Moderate</option>
                 <option value="Hard" {% if trek and trek.difficulty == 'Hard' %}selected{% endif %}>Hard</option>
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Duration in Days</label>
-            <input type="number" class="form-control" name="duration_days" min="1"
+            <label class="form-label fw-semibold small">Duration in Days</label>
+            <input type="number" class="form-control rounded-3" name="duration_days" min="1"
                    value="{{ trek.duration_days if trek else '' }}" required>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Available Slots</label>
-            <input type="number" class="form-control" name="available_slots" min="1"
+            <label class="form-label fw-semibold small">Available Slots</label>
+            <input type="number" class="form-control rounded-3" name="available_slots" min="1"
                    value="{{ trek.available_slots if trek else '' }}" required>
         </div>
         <div class="col-md-6">
-            <label class="form-label">Start Date</label>
-            <input type="date" class="form-control" name="start_date" value="{{ trek.start_date if trek else '' }}" required>
+            <label class="form-label fw-semibold small">Start Date</label>
+            <input type="date" class="form-control rounded-3" name="start_date" value="{{ trek.start_date if trek else '' }}" required>
         </div>
         <div class="col-md-6">
-            <label class="form-label">End Date</label>
-            <input type="date" class="form-control" name="end_date" value="{{ trek.end_date if trek else '' }}" required>
+            <label class="form-label fw-semibold small">End Date</label>
+            <input type="date" class="form-control rounded-3" name="end_date" value="{{ trek.end_date if trek else '' }}" required>
         </div>
         <div class="col-md-12">
-            <label class="form-label">Assign Trek Staff</label>
-            <select class="form-select" name="assigned_staff_id">
+            <label class="form-label fw-semibold small">Assign Trek Staff</label>
+            <select class="form-select rounded-3" name="assigned_staff_id">
                 <option value="">Not assigned</option>
                 {% for staff in approved_staff %}
                     <option value="{{ staff.id }}"
@@ -56,267 +56,296 @@
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="mb-1">Welcome, {{ user.name if user else session.get('name', 'Admin') }}</h2>
-        <p class="text-muted mb-0">Role: Admin</p>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h3 class="fw-bold mb-0">Welcome, {{ user.name if user else session.get('name', 'System Admin') }}</h3>
+            <span class="badge bg-dark rounded-pill px-3 py-2">Role: Admin</span>
+        </div>
+        <p class="text-muted mb-0 small">System Dashboard &amp; Management</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a href="/admin/export/bookings" class="btn btn-outline-success">
+        <a href="/admin/export/bookings" class="btn btn-outline-secondary rounded-3 px-3 fw-medium">
             Download Bookings CSV
         </a>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTrekModal">
+        <button class="btn btn-emerald rounded-3 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#addTrekModal">
             Add New Trek
         </button>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-6 col-xl-3">
-        <div class="stat-card shadow-sm h-100">
-            <p class="stat-label">Total Treks</p>
-            <div class="stat-value">{{ total_treks }}</div>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-1">Total Treks</p>
+                <h3 class="fw-bold mb-0">{{ total_treks }}</h3>
+            </div>
+            <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                <span class="fs-4">🏔️</span>
+            </div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="stat-card shadow-sm h-100">
-            <p class="stat-label">Users & Staff</p>
-            <div class="stat-value">{{ total_trekkers }} / {{ total_staff }}</div>
-            <p class="text-muted small mb-0">Trekkers / Staff</p>
+    <div class="col">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-1">Users &amp; Staff</p>
+                <h3 class="fw-bold mb-0">{{ total_trekkers }} / {{ total_staff }}</h3>
+                <p class="text-muted mb-0" style="font-size: 0.75rem;">Trekkers / Staff</p>
+            </div>
+            <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                <span class="fs-4">👥</span>
+            </div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="stat-card shadow-sm h-100">
-            <p class="stat-label">Pending Staff Approvals</p>
-            <div class="stat-value">{{ pending_staff_count }}</div>
+    <div class="col">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-1">Pending Staff</p>
+                <h3 class="fw-bold mb-0">{{ pending_staff_count }}</h3>
+            </div>
+            <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                <span class="fs-4">⏳</span>
+            </div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="stat-card shadow-sm h-100">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-                <div>
-                    <p class="stat-label">Overall Capacity Utilization</p>
-                    <div class="stat-value">{{ overall_occupancy.occupancy_percentage }}%</div>
-                </div>
-                <span class="badge rounded-pill px-3 py-2 text-bg-light border">
+    <div class="col">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-0">Capacity Utilization</p>
+                <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small">
                     {{ overall_occupancy.booked_slots }}/{{ overall_occupancy.total_slots }}
                 </span>
             </div>
-            <div class="progress mt-3" role="progressbar"
+            <h3 class="fw-bold mb-2">{{ overall_occupancy.occupancy_percentage }}%</h3>
+            <div class="progress" role="progressbar"
                  aria-label="Overall capacity utilization"
                  aria-valuenow="{{ overall_occupancy.occupancy_percentage }}"
-                 aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar {{ overall_occupancy.progress_class }}"
-                     style="width: {{ overall_occupancy.occupancy_percentage }}%">
+                 aria-valuemin="0" aria-valuemax="100"
+                 style="height: 6px; border-radius: 10px;">
+                <div class="progress-bar bg-emerald"
+                     style="width: {{ overall_occupancy.occupancy_percentage }}%; border-radius: 10px;">
                 </div>
             </div>
-            <p class="small text-muted mb-0 mt-2">
-                {{ overall_occupancy.booked_slots }} booked,
-                {{ overall_occupancy.available_slots }} available
-            </p>
         </div>
     </div>
 </div>
 
-<form method="get" action="/admin/dashboard" class="row g-2 mb-4">
-    <div class="col-md-10">
-        <input type="text" class="form-control" name="q" value="{{ search_query }}"
+<form method="get" action="/admin/dashboard" class="bg-white p-2 px-3 rounded-3 shadow-sm border mb-4 d-flex gap-2 align-items-center">
+    <div class="flex-grow-1">
+        <input type="text" class="form-control border-0 shadow-none ps-2" name="q" value="{{ search_query }}"
                placeholder="Search treks, staff, or trekkers by name or ID">
     </div>
-    <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-outline-primary">Search</button>
-    </div>
+    <button type="submit" class="btn btn-emerald rounded-3 px-4 btn-sm fw-semibold py-2">Search</button>
 </form>
 
 {% if search_query %}
-    <div class="alert alert-info">
-        Showing results for "{{ search_query }}".
-        <a href="/admin/dashboard" class="alert-link">Clear search</a>
+    <div class="alert alert-info rounded-3 d-flex align-items-center justify-content-between mb-4">
+        <span>Showing results for "<strong>{{ search_query }}</strong>".</span>
+        <a href="/admin/dashboard" class="btn btn-sm btn-outline-dark rounded-pill px-3">Clear search</a>
     </div>
 {% endif %}
 
 <section class="mb-5" id="treks">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Trek Management</h4>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Location</th>
-                    <th>Difficulty</th>
-                    <th>Duration</th>
-                    <th>Slots</th>
-                    <th>Dates</th>
-                    <th>Assigned Staff</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for trek in treks %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0">Trek Management</h4>
+            <span class="badge bg-light text-secondary rounded-pill px-3 py-2">{{ treks|length }} Treks</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary border-bottom">
                     <tr>
-                        <td>{{ trek.id }}</td>
-                        <td>{{ trek.name }}</td>
-                        <td>{{ trek.location }}</td>
-                        <td>
-                            {% if trek.difficulty == 'Easy' %}
-                                <span class="badge rounded-pill px-3 py-2 difficulty-easy">Easy</span>
-                            {% elif trek.difficulty == 'Moderate' %}
-                                <span class="badge rounded-pill px-3 py-2 difficulty-moderate">Moderate</span>
-                            {% else %}
-                                <span class="badge rounded-pill px-3 py-2 difficulty-hard">{{ trek.difficulty }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ trek.duration_days }} days</td>
-                        <td>{{ trek.available_slots }}</td>
-                        <td>{{ trek.start_date }} to {{ trek.end_date }}</td>
-                        <td>{{ trek.assigned_staff.name if trek.assigned_staff else 'Not assigned' }}</td>
-                        <td>
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#editTrekModal{{ trek.id }}">
-                                    Edit
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteTrekModal{{ trek.id }}">
-                                    Delete
-                                </button>
-                            </div>
-                        </td>
+                        <th class="ps-4">ID</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Difficulty</th>
+                        <th>Duration</th>
+                        <th>Slots</th>
+                        <th>Dates</th>
+                        <th>Assigned Staff</th>
+                        <th class="pe-4">Actions</th>
                     </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="9" class="text-center text-muted">No treks found.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for trek in treks %}
+                        <tr>
+                            <td class="ps-4 text-secondary fw-semibold">#{{ trek.id }}</td>
+                            <td class="fw-bold">{{ trek.name }}</td>
+                            <td>📍 {{ trek.location }}</td>
+                            <td>
+                                {% if trek.difficulty == 'Easy' %}
+                                    <span class="badge rounded-pill px-3 py-2 difficulty-easy">Easy</span>
+                                {% elif trek.difficulty == 'Moderate' %}
+                                    <span class="badge rounded-pill px-3 py-2 difficulty-moderate">Moderate</span>
+                                {% else %}
+                                    <span class="badge rounded-pill px-3 py-2 difficulty-hard">{{ trek.difficulty }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ trek.duration_days }} days</td>
+                            <td><span class="fw-semibold">{{ trek.available_slots }}</span></td>
+                            <td class="small text-secondary">{{ trek.start_date }} to {{ trek.end_date }}</td>
+                            <td>
+                                {% if trek.assigned_staff %}
+                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1 fw-medium">{{ trek.assigned_staff.name }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal"
+                                            data-bs-target="#editTrekModal{{ trek.id }}">
+                                        Edit
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteTrekModal{{ trek.id }}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">No treks found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
 
 <section class="mb-5" id="users">
-    <h4 class="mb-3">Trek Staff Management</h4>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for staff in staff_members %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0">Trek Staff Management</h4>
+            <span class="badge bg-light text-secondary rounded-pill px-3 py-2">{{ staff_members|length }} Staff</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary border-bottom">
                     <tr>
-                        <td>{{ staff.id }}</td>
-                        <td>{{ staff.name }}</td>
-                        <td>{{ staff.email }}</td>
-                        <td>
-                            {% if staff.status == 'approved' %}
-                                <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
-                            {% elif staff.status == 'pending' %}
-                                <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
-                            {% else %}
-                                <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                {% if staff.status == 'pending' %}
-                                    <form method="post" action="/admin/staff/approve/{{ staff.id }}">
-                                        <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                    </form>
-                                {% endif %}
-                                {% if staff.status != 'blacklisted' %}
-                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#blacklistModal{{ staff.id }}">
-                                        Blacklist
-                                    </button>
+                        <th class="ps-4">ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th class="pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff in staff_members %}
+                        <tr>
+                            <td class="ps-4 text-secondary fw-semibold">#{{ staff.id }}</td>
+                            <td class="fw-bold">{{ staff.name }}</td>
+                            <td>{{ staff.email }}</td>
+                            <td>
+                                {% if staff.status == 'approved' %}
+                                    <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
+                                {% elif staff.status == 'pending' %}
+                                    <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
                                 {% else %}
-                                    <span class="text-muted">No action</span>
+                                    <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
                                 {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No trek staff found.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            </td>
+                            <td class="pe-4">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    {% if staff.status == 'pending' %}
+                                        <form method="post" action="/admin/staff/approve/{{ staff.id }}" class="d-inline">
+                                            <button type="submit" class="btn btn-emerald btn-sm rounded-pill px-3">Approve</button>
+                                        </form>
+                                    {% endif %}
+                                    {% if staff.status != 'blacklisted' %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#blacklistModal{{ staff.id }}">
+                                            Blacklist
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small">No action</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No trek staff found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
 
 <section class="mb-5">
-    <h4 class="mb-3">Trekker Management</h4>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for trekker in trekkers %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0">Trekker Management</h4>
+            <span class="badge bg-light text-secondary rounded-pill px-3 py-2">{{ trekkers|length }} Trekkers</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary border-bottom">
                     <tr>
-                        <td>{{ trekker.id }}</td>
-                        <td>{{ trekker.name }}</td>
-                        <td>{{ trekker.email }}</td>
-                        <td>
-                            {% if trekker.status == 'approved' %}
-                                <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
-                            {% elif trekker.status == 'pending' %}
-                                <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
-                            {% else %}
-                                <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if trekker.status == 'blacklisted' %}
-                                <form method="post" action="/admin/user/reactivate/{{ trekker.id }}">
-                                    <button type="submit" class="btn btn-sm btn-success">Reactivate</button>
-                                </form>
-                            {% else %}
-                                <form method="post" action="/admin/user/blacklist/{{ trekker.id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Blacklist</button>
-                                </form>
-                            {% endif %}
-                        </td>
+                        <th class="ps-4">ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th class="pe-4">Actions</th>
                     </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No trekkers found.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for trekker in trekkers %}
+                        <tr>
+                            <td class="ps-4 text-secondary fw-semibold">#{{ trekker.id }}</td>
+                            <td class="fw-bold">{{ trekker.name }}</td>
+                            <td>{{ trekker.email }}</td>
+                            <td>
+                                {% if trekker.status == 'approved' %}
+                                    <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
+                                {% elif trekker.status == 'pending' %}
+                                    <span class="badge rounded-pill px-3 py-2 status-pending">pending</span>
+                                {% else %}
+                                    <span class="badge rounded-pill px-3 py-2 status-blacklisted">blacklisted</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4">
+                                {% if trekker.status == 'blacklisted' %}
+                                    <form method="post" action="/admin/user/reactivate/{{ trekker.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-emerald btn-sm rounded-pill px-3">Reactivate</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="/admin/user/blacklist/{{ trekker.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Blacklist</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No trekkers found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
 
 <div class="modal fade" id="addTrekModal" tabindex="-1" aria-labelledby="addTrekModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
             <form method="post" action="/admin/trek/add">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addTrekModalLabel">Add New Trek</h5>
+                <div class="modal-header border-bottom px-4 py-3">
+                    <h5 class="modal-title fw-bold" id="addTrekModalLabel">Add New Trek</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     {{ trek_form_fields() }}
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Trek</button>
+                <div class="modal-footer border-top p-4 d-flex flex-column gap-2">
+                    <button type="submit" class="btn btn-emerald w-100 rounded-3 py-2 fw-bold">Add Trek</button>
+                    <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -326,19 +355,19 @@
 {% for trek in treks %}
     <div class="modal fade" id="editTrekModal{{ trek.id }}" tabindex="-1"
          aria-labelledby="editTrekModalLabel{{ trek.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
                 <form method="post" action="/admin/trek/edit/{{ trek.id }}">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editTrekModalLabel{{ trek.id }}">Edit Trek</h5>
+                    <div class="modal-header border-bottom px-4 py-3">
+                        <h5 class="modal-title fw-bold" id="editTrekModalLabel{{ trek.id }}">Edit Trek</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body p-4">
                         {{ trek_form_fields(trek) }}
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <div class="modal-footer border-top p-4 d-flex flex-column gap-2">
+                        <button type="submit" class="btn btn-emerald w-100 rounded-3 py-2 fw-bold">Save Changes</button>
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -349,21 +378,21 @@
 {% for trek in treks %}
     <div class="modal fade" id="deleteTrekModal{{ trek.id }}" tabindex="-1"
          aria-labelledby="deleteTrekModalLabel{{ trek.id }}" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
                 <form method="post" action="/admin/trek/delete/{{ trek.id }}">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteTrekModalLabel{{ trek.id }}">
+                    <div class="modal-header border-bottom px-4 py-3">
+                        <h5 class="modal-title fw-bold" id="deleteTrekModalLabel{{ trek.id }}">
                             Confirm Trek Deletion
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete '{{ trek.name }}'? This action cannot be undone.
+                    <div class="modal-body p-4">
+                        <p class="mb-0 text-secondary">Are you sure you want to delete <strong>'{{ trek.name }}'</strong>? This action cannot be undone.</p>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    <div class="modal-footer border-top p-4 d-flex flex-column gap-2">
+                        <button type="submit" class="btn btn-danger w-100 rounded-3 py-2 fw-bold">Confirm Delete</button>
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -375,21 +404,21 @@
     {% if staff.status != 'blacklisted' %}
         <div class="modal fade" id="blacklistModal{{ staff.id }}" tabindex="-1"
              aria-labelledby="blacklistModalLabel{{ staff.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow-lg">
                     <form method="post" action="/admin/staff/blacklist/{{ staff.id }}">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="blacklistModalLabel{{ staff.id }}">
+                        <div class="modal-header border-bottom px-4 py-3">
+                            <h5 class="modal-title fw-bold" id="blacklistModalLabel{{ staff.id }}">
                                 Confirm Staff Blacklist
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body">
-                            Are you sure you want to blacklist '{{ staff.name }}'?
+                        <div class="modal-body p-4">
+                            <p class="mb-0 text-secondary">Are you sure you want to blacklist staff member <strong>'{{ staff.name }}'</strong>?</p>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-danger">Confirm Blacklist</button>
+                        <div class="modal-footer border-top p-4 d-flex flex-column gap-2">
+                            <button type="submit" class="btn btn-danger w-100 rounded-3 py-2 fw-bold">Confirm Blacklist</button>
+                            <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium" data-bs-dismiss="modal">Cancel</button>
                         </div>
                     </form>
                 </div>
