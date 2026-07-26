@@ -29,6 +29,11 @@ def login_required(function):
         if "user_id" not in session:
             flash("Please login to continue.", "warning")
             return redirect("/login")
+        user = db.session.get(User, session["user_id"])
+        if not user or user.status == "blacklisted":
+            session.clear()
+            flash("Account blacklisted. Contact support.", "danger")
+            return redirect("/login")
         return function(*args, **kwargs)
 
     return wrapper
@@ -270,7 +275,7 @@ def login():
             return redirect("/login")
 
         if user.status == "blacklisted":
-            flash("Your account has been deactivated.", "danger")
+            flash("Account blacklisted. Contact support.", "danger")
             return redirect("/login")
 
         session["user_id"] = user.id
@@ -329,6 +334,7 @@ def admin_dashboard():
     )
 
 
+@app.route("/admin/add_trek", methods=["GET", "POST"])
 @app.route("/admin/trek/add", methods=["GET", "POST"])
 @login_required
 @role_required("admin")
@@ -618,6 +624,7 @@ def user_dashboard():
 def browse_treks():
     search_query = request.args.get("q", "").strip()
     difficulty = request.args.get("difficulty", "").strip()
+    location = request.args.get("location", "").strip()
 
     trek_query = Trek.query.filter(Trek.status == "Open", Trek.available_slots > 0)
 
@@ -630,6 +637,9 @@ def browse_treks():
     if difficulty:
         trek_query = trek_query.filter(Trek.difficulty == difficulty)
 
+    if location:
+        trek_query = trek_query.filter(Trek.location.ilike(f"%{location}%"))
+
     treks = trek_query.order_by(Trek.start_date.asc(), Trek.name.asc()).all()
 
     return render_template(
@@ -637,6 +647,7 @@ def browse_treks():
         treks=treks,
         search_query=search_query,
         selected_difficulty=difficulty,
+        selected_location=location,
         difficulties=["Easy", "Moderate", "Hard"],
     )
 

@@ -42,7 +42,7 @@ class Trek(db.Model):
     status = db.Column(db.String(20), nullable=False, default="Open")
     assigned_staff_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
-    bookings = db.relationship("Booking", back_populates="trek")
+    bookings = db.relationship("Booking", back_populates="trek", cascade="all, delete-orphan")
     assigned_staff = db.relationship(
         "User",
         back_populates="assigned_treks",
