@@ -25,6 +25,18 @@
     {% endif %}
 {% endmacro %}
 
+{% macro trek_state_badge(state) %}
+    {% if state == 'Upcoming' %}
+        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3">Upcoming</span>
+    {% elif state == 'Ongoing' %}
+        <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-3">⚡ Ongoing</span>
+    {% elif state == 'Completed' %}
+        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Completed</span>
+    {% else %}
+        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">{{ state }}</span>
+    {% endif %}
+{% endmacro %}
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h2 class="fw-bold mb-1">Welcome, {{ user.name if user else session.get('name', 'Trek Staff') }}</h2>
@@ -98,6 +110,8 @@
     {% if assigned_treks %}
         {% for trek in assigned_treks %}
             {% set occupancy = trek_occupancy[trek.id] %}
+            {% set pending_req = (trek.change_requests | selectattr("status", "equalto", "pending") | list | first) %}
+            {% set is_locked = (trek.state == "Ongoing" or trek.state == "Completed") %}
             <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
                     <div>
@@ -105,6 +119,7 @@
                             <h5 class="fw-bold mb-0">{{ trek.name }}</h5>
                             {{ status_badge(trek.status) }}
                             {{ difficulty_badge(trek.difficulty) }}
+                            {{ trek_state_badge(trek.state) }}
                         </div>
                         <p class="text-muted small mb-0">
                             📍 {{ trek.location }} <span class="mx-1">•</span> {{ trek.start_date }} to {{ trek.end_date }}
@@ -138,27 +153,37 @@
                     </div>
                 </div>
 
+                {% if pending_req %}
+                    <div class="alert alert-warning border-0 rounded-3 py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+                        ⏳ Change request pending Admin approval (Proposed: {{ pending_req.requested_available_slots }} slots, Status: {{ pending_req.requested_status }})
+                    </div>
+                {% endif %}
+
                 <form method="post" action="/staff/trek/update/{{ trek.id }}" class="mt-3 d-flex flex-wrap align-items-center gap-3 pt-3 border-top">
                     <div class="d-flex align-items-center gap-2">
                         <label class="form-label small fw-semibold mb-0" for="availableSlots{{ trek.id }}">Slots:</label>
                         <input type="number" class="form-control form-control-sm rounded-3" name="available_slots"
                                id="availableSlots{{ trek.id }}" min="0"
                                value="{{ trek.available_slots or 0 }}"
-                               style="max-width: 100px;" required>
+                               style="max-width: 100px;" required {% if is_locked %}disabled{% endif %}>
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
                         <label class="form-label small fw-semibold mb-0" for="trekStatus{{ trek.id }}">Status:</label>
                         <select class="form-select form-select-sm rounded-3" name="status"
                                 id="trekStatus{{ trek.id }}"
-                                style="max-width: 130px;" required>
+                                style="max-width: 130px;" required {% if is_locked %}disabled{% endif %}>
                             <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open</option>
                             <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
                             <option value="Completed" {% if trek.status == 'Completed' %}selected{% endif %}>Completed</option>
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-emerald btn-sm rounded-3 px-3">Update</button>
+                    <button type="submit" class="btn btn-emerald btn-sm rounded-3 px-3" {% if is_locked %}disabled{% endif %}>Update</button>
+
+                    {% if is_locked %}
+                        <span class="text-muted small ms-2"><i class="bi bi-lock-fill"></i> 🔒 Edits disabled for ongoing or completed treks</span>
+                    {% endif %}
 
                     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
                         <button type="button" class="btn btn-outline-secondary btn-sm rounded-3" data-bs-toggle="modal"

@@ -1,13 +1,13 @@
 import csv
 import io
 import os
-from datetime import date
+from datetime import date, datetime
 from functools import wraps
 
 from flask import Flask, Response, flash, redirect, render_template, request, session
 from sqlalchemy import or_
 
-from models import Booking, Trek, User, db
+from models import Booking, Trek, TrekChangeRequest, User, db
 
 
 app = Flask(__name__)
@@ -86,12 +86,18 @@ def get_trek_form_data():
         if not staff or staff.role != "staff" or staff.status != "approved":
             raise ValueError
 
+    available_slots = int(request.form.get("available_slots") or 0)
+    total_slots_raw = request.form.get("total_slots")
+    total_slots = int(total_slots_raw) if total_slots_raw else available_slots
+
     return {
         "name": request.form.get("name"),
         "location": request.form.get("location"),
         "difficulty": request.form.get("difficulty"),
         "duration_days": int(request.form.get("duration_days") or 0),
-        "available_slots": int(request.form.get("available_slots") or 0),
+        "total_slots": total_slots,
+        "available_slots": available_slots,
+        "image_url": request.form.get("image_url") or "",
         "start_date": parse_date(request.form.get("start_date")),
         "end_date": parse_date(request.form.get("end_date")),
         "assigned_staff_id": assigned_staff_id,
@@ -104,9 +110,12 @@ def apply_search(query, model, name_column):
 
     search_text = f"%{query}%"
     filters = [name_column.ilike(search_text)]
+    if hasattr(model, "email"):
+        filters.append(model.email.ilike(search_text))
 
-    if query.isdigit():
-        filters.append(model.id == int(query))
+    clean_query = query.lstrip("#").strip() if query else ""
+    if clean_query.isdigit():
+        filters.append(model.id == int(clean_query))
 
     return model.query.filter(or_(*filters))
 
@@ -318,6 +327,13 @@ def admin_dashboard():
     all_treks = Trek.query.all()
     overall_occupancy = get_overall_occupancy_metrics(all_treks)
 
+    pending_change_requests = (
+        TrekChangeRequest.query.filter_by(status="pending")
+        .order_by(TrekChangeRequest.created_at.desc())
+        .all()
+    )
+    all_bookings = Booking.query.order_by(Booking.booking_date.desc()).all()
+
     return render_template(
         "admin_dashboard.html",
         user=user,
@@ -331,6 +347,8 @@ def admin_dashboard():
         trekkers=trekkers,
         approved_staff=approved_staff,
         overall_occupancy=overall_occupancy,
+        pending_change_requests=pending_change_requests,
+        all_bookings=all_bookings,
     )
 
 
@@ -425,6 +443,69 @@ def blacklist_staff(id):
     return redirect("/admin/dashboard")
 
 
+@app.route("/admin/staff/reactivate/<int:id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def reactivate_staff(id):
+    staff = db.session.get(User, id)
+    if not staff or staff.role != "staff":
+        flash("Staff member not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    staff.status = "approved"
+    db.session.commit()
+    flash("Staff member reactivated successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/change_request/approve/<int:req_id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def approve_change_request(req_id):
+    req = db.session.get(TrekChangeRequest, req_id)
+    if not req:
+        flash("Change request not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    req.status = "approved"
+    if req.trek:
+        setattr(req.trek, "available_slots", req.requested_available_slots)
+        setattr(req.trek, "status", req.requested_status)
+    db.session.commit()
+    flash("Change request approved successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/change_request/reject/<int:req_id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def reject_change_request(req_id):
+    req = db.session.get(TrekChangeRequest, req_id)
+    if not req:
+        flash("Change request not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    req.status = "rejected"
+    db.session.commit()
+    flash("Change request rejected.", "info")
+    return redirect("/admin/dashboard")
+
+
+@app.route("/admin/change_request/delete/<int:req_id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def delete_change_request(req_id):
+    req = db.session.get(TrekChangeRequest, req_id)
+    if not req:
+        flash("Change request not found.", "danger")
+        return redirect("/admin/dashboard")
+
+    db.session.delete(req)
+    db.session.commit()
+    flash("Change request deleted successfully.", "success")
+    return redirect("/admin/dashboard")
+
+
 @app.route("/admin/user/blacklist/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
@@ -460,8 +541,8 @@ def reactivate_user(id):
 @role_required("admin")
 def export_bookings():
     bookings = (
-        Booking.query.join(Booking.user)
-        .join(Booking.trek)
+        Booking.query.join(User, Booking.user_id == User.id)
+        .join(Trek, Booking.trek_id == Trek.id)
         .order_by(Booking.booking_date.desc())
         .all()
     )
@@ -510,8 +591,12 @@ def update_staff_trek(trek_id):
         flash("You can update only treks assigned to you.", "danger")
         return redirect("/staff/dashboard")
 
+    if trek.state in ("Ongoing", "Completed"):
+        flash("Cannot submit edit requests for ongoing or completed treks.", "warning")
+        return redirect("/staff/dashboard")
+
     status = request.form.get("status")
-    if status not in ("Open", "Closed", "Completed"):
+    if status not in ("Open", "Closed"):
         flash("Please select a valid trek status.", "danger")
         return redirect("/staff/dashboard")
 
@@ -525,10 +610,16 @@ def update_staff_trek(trek_id):
         flash("Available slots cannot be negative.", "danger")
         return redirect("/staff/dashboard")
 
-    trek.available_slots = available_slots
-    trek.status = status
+    change_req = TrekChangeRequest(
+        trek_id=trek.id,
+        staff_id=session["user_id"],
+        requested_available_slots=available_slots,
+        requested_status=status,
+        status="pending",
+    )
+    db.session.add(change_req)
     db.session.commit()
-    flash("Trek details updated successfully.", "success")
+    flash("Change request submitted to Admin for approval.", "info")
     return redirect("/staff/dashboard")
 
 
@@ -564,7 +655,7 @@ def export_participants(trek_id):
 
     bookings = (
         Booking.query.filter_by(trek_id=trek.id)
-        .join(Booking.user)
+        .join(User, Booking.user_id == User.id)
         .order_by(Booking.booking_date.desc())
         .all()
     )

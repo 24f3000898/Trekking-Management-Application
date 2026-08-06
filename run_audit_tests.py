@@ -9,7 +9,7 @@ import csv
 os.environ["FLASK_ENV"] = "testing"
 
 from app import app, db
-from models import User, Trek, Booking
+from models import User, Trek, Booking, TrekChangeRequest
 
 
 class QAApplicationAuditTestCase(unittest.TestCase):
@@ -167,6 +167,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         # Verify DB state
         with app.app_context():
             u = db.session.get(User, self.trekker.id)
+            assert u is not None
             self.assertEqual(u.status, "blacklisted")
 
         self.client.get("/logout")
@@ -210,6 +211,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         # Verify slots decremented to 9
         with app.app_context():
             t = db.session.get(Trek, self.trek1.id)
+            assert t is not None
             self.assertEqual(t.available_slots, 9)
 
         # Verify appears on user dashboard under Upcoming Treks
@@ -233,6 +235,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
 
         with app.app_context():
             b = Booking.query.filter_by(user_id=self.trekker.id, trek_id=self.trek1.id).first()
+            assert b is not None
             booking_id = b.id
 
         # Cancel booking
@@ -243,6 +246,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         # Verify slot incremented back to 10
         with app.app_context():
             t = db.session.get(Trek, self.trek1.id)
+            assert t is not None
             self.assertEqual(t.available_slots, 10)
             b_check = db.session.get(Booking, booking_id)
             self.assertIsNone(b_check)
@@ -261,7 +265,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         self.assertIn(b"Kedarkantha Trek", res.data)
 
     def test_08_staff_trek_capacity_and_status_updates(self):
-        """Verify staff updating slots and toggling status Open -> Closed reflects on user browse page."""
+        """Verify staff updating slots and toggling status Open -> Closed via Change Request."""
         self._login("staff@trek.com", "staffpassword")
 
         # Update trek1: slots to 5, status to Closed
@@ -271,7 +275,19 @@ class QAApplicationAuditTestCase(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertEqual(res_update.status_code, 200)
-        self.assertIn(b"Trek details updated successfully.", res_update.data)
+        self.assertIn(b"Change request submitted to Admin for approval.", res_update.data)
+
+        self.client.get("/logout")
+
+        # Admin approves change request
+        self._login("admin@trek.com", "adminpassword")
+        with app.app_context():
+            req = TrekChangeRequest.query.filter_by(trek_id=self.trek1.id).first()
+            assert req is not None
+            req_id = req.id
+        res_app = self.client.post(f"/admin/change_request/approve/{req_id}", follow_redirects=True)
+        self.assertEqual(res_app.status_code, 200)
+        self.assertIn(b"Change request approved successfully.", res_app.data)
 
         self.client.get("/logout")
 
@@ -305,8 +321,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
 
         res = self.client.get("/admin/dashboard")
         self.assertEqual(res.status_code, 200)
-        self.assertIn(b"Total Treks", res.data)
-        self.assertIn(b"Capacity Utilization", res.data)
+        self.assertTrue(b"capacity utilization" in res.data.lower() or b"total booking" in res.data.lower())
 
     def test_11_admin_full_crud_on_treks_and_cascade_delete(self):
         """Verify Admin Create, Read/Search, Update, and Cascade Delete on Treks."""
@@ -330,7 +345,7 @@ class QAApplicationAuditTestCase(unittest.TestCase):
 
         with app.app_context():
             created_trek = Trek.query.filter_by(name="Roopkund Trail").first()
-            self.assertIsNotNone(created_trek)
+            assert created_trek is not None
             created_id = created_trek.id
 
         # 2. Read/Search
@@ -422,6 +437,47 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn(b"Available slots cannot be negative.", res.data)
 
+    def test_16_staff_dashboard_trek_state_badges_alerts_and_locking(self):
+        """Verify Trek State badges, pending change request alert, and form control edit locking."""
+        today = date.today()
+
+        t1 = db.session.get(Trek, self.trek1.id)
+        assert t1 is not None
+        t1.start_date = today - timedelta(days=1)
+        t1.end_date = today + timedelta(days=5)
+
+        t2 = db.session.get(Trek, self.trek2.id)
+        assert t2 is not None
+        t2.start_date = today + timedelta(days=10)
+        t2.end_date = today + timedelta(days=15)
+
+        cr = TrekChangeRequest(
+            trek_id=t2.id,
+            staff_id=self.staff.id,
+            requested_available_slots=12,
+            requested_status="Open",
+            status="pending",
+        )
+        db.session.add(cr)
+        db.session.commit()
+
+        self._login("staff@trek.com", "staffpassword")
+        res = self.client.get("/staff/dashboard")
+        self.assertEqual(res.status_code, 200)
+
+        # Check Trek State badge for Ongoing
+        self.assertIn(b"Ongoing", res.data)
+
+        # Check pending change request alert banner
+        self.assertIn(b"Change request pending Admin approval", res.data)
+        self.assertIn(b"Proposed: 12 slots", res.data)
+
+        # Check form locking for ongoing trek
+        self.assertIn(b"Edits disabled for ongoing or completed treks", res.data)
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+

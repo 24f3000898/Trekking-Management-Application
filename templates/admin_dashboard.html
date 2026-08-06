@@ -3,6 +3,28 @@
 {% block title %}Admin Dashboard - Trekking Management{% endblock %}
 
 {% block content %}
+{% macro status_badge(status) %}
+    {% if status == 'Open' %}
+        <span class="badge rounded-pill px-3 py-2 status-open">Open</span>
+    {% elif status == 'Closed' %}
+        <span class="badge rounded-pill px-3 py-2 status-closed">Closed</span>
+    {% else %}
+        <span class="badge rounded-pill px-3 py-2 status-completed">Completed</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro trek_state_badge(state) %}
+    {% if state == 'Upcoming' %}
+        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1">Upcoming</span>
+    {% elif state == 'Ongoing' %}
+        <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-3 py-1">⚡ Ongoing</span>
+    {% elif state == 'Completed' %}
+        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1">Completed</span>
+    {% else %}
+        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1">{{ state }}</span>
+    {% endif %}
+{% endmacro %}
+
 {% macro trek_form_fields(trek=None) %}
     <div class="row g-3">
         <div class="col-md-6">
@@ -110,7 +132,7 @@
     <div class="col">
         <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-column justify-content-between">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-0">Capacity Utilization</p>
+                <p class="text-muted small fw-semibold text-uppercase tracking-wider mb-0">TOTAL BOOKING</p>
                 <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small">
                     {{ overall_occupancy.booked_slots }}/{{ overall_occupancy.total_slots }}
                 </span>
@@ -144,6 +166,63 @@
     </div>
 {% endif %}
 
+{% if pending_change_requests %}
+<section class="mb-5" id="change-requests">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0">Pending Staff Change Requests</h4>
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">{{ pending_change_requests|length }} Pending</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary border-bottom">
+                    <tr>
+                        <th class="ps-4">Req ID</th>
+                        <th>Trek Name</th>
+                        <th>Staff Member</th>
+                        <th>Proposed Slots</th>
+                        <th>Proposed Status</th>
+                        <th>Requested At</th>
+                        <th class="pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_change_requests %}
+                        <tr>
+                            <td class="ps-4 text-secondary fw-semibold">#{{ req.id }}</td>
+                            <td class="fw-bold">{{ req.trek.name if req.trek else 'Unknown Trek' }}</td>
+                            <td>{{ req.staff.name if req.staff else 'Unknown Staff' }}</td>
+                            <td>
+                                <span class="text-muted text-decoration-line-through small">{{ req.trek.available_slots if req.trek else 0 }}</span>
+                                <span class="fw-bold text-success ms-1">➔ {{ req.requested_available_slots }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted text-decoration-line-through small">{{ req.trek.status if req.trek else 'N/A' }}</span>
+                                <span class="fw-bold text-primary ms-1">➔ {{ req.requested_status }}</span>
+                            </td>
+                            <td class="small text-secondary">{{ req.created_at.strftime('%d %b %Y, %H:%M') if req.created_at else '' }}</td>
+                            <td class="pe-4">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <form method="post" action="/admin/change_request/approve/{{ req.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-emerald btn-sm rounded-pill px-3">Approve</button>
+                                    </form>
+                                    <form method="post" action="/admin/change_request/reject/{{ req.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3">Reject</button>
+                                    </form>
+                                    <form method="post" action="/admin/change_request/delete/{{ req.id }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <section class="mb-5" id="treks">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
         <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
@@ -161,6 +240,7 @@
                         <th>Duration</th>
                         <th>Slots</th>
                         <th>Dates</th>
+                        <th>Status &amp; State</th>
                         <th>Assigned Staff</th>
                         <th class="pe-4">Actions</th>
                     </tr>
@@ -184,6 +264,12 @@
                             <td><span class="fw-semibold">{{ trek.available_slots }}</span></td>
                             <td class="small text-secondary">{{ trek.start_date }} to {{ trek.end_date }}</td>
                             <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <div>{{ status_badge(trek.status) }}</div>
+                                    <div>{{ trek_state_badge(trek.state) }}</div>
+                                </div>
+                            </td>
+                            <td>
                                 {% if trek.assigned_staff %}
                                     <span class="badge bg-light text-dark border rounded-pill px-3 py-1 fw-medium">{{ trek.assigned_staff.name }}</span>
                                 {% else %}
@@ -206,7 +292,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">No treks found.</td>
+                            <td colspan="10" class="text-center text-muted py-4">No treks found.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -228,6 +314,7 @@
                         <th class="ps-4">ID</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Assigned Treks &amp; State</th>
                         <th>Status</th>
                         <th class="pe-4">Actions</th>
                     </tr>
@@ -238,6 +325,19 @@
                             <td class="ps-4 text-secondary fw-semibold">#{{ staff.id }}</td>
                             <td class="fw-bold">{{ staff.name }}</td>
                             <td>{{ staff.email }}</td>
+                            <td>
+                                {% if staff.assigned_treks %}
+                                    <div class="d-flex flex-column gap-1">
+                                        {% for trek in staff.assigned_treks %}
+                                            <div class="small fw-medium">
+                                                {{ trek.name }} {{ trek_state_badge(trek.state) }}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">No assigned treks</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if staff.status == 'approved' %}
                                     <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
@@ -254,21 +354,23 @@
                                             <button type="submit" class="btn btn-emerald btn-sm rounded-pill px-3">Approve</button>
                                         </form>
                                     {% endif %}
-                                    {% if staff.status != 'blacklisted' %}
+                                    {% if staff.status == 'blacklisted' %}
+                                        <form method="post" action="/admin/staff/reactivate/{{ staff.id }}" class="d-inline">
+                                            <button type="submit" class="btn btn-emerald btn-sm rounded-pill px-3">Reactivate</button>
+                                        </form>
+                                    {% else %}
                                         <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#blacklistModal{{ staff.id }}">
                                             Blacklist
                                         </button>
-                                    {% else %}
-                                        <span class="text-muted small">No action</span>
                                     {% endif %}
                                 </div>
                             </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No trek staff found.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No trek staff found.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -290,6 +392,7 @@
                         <th class="ps-4">ID</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Booked Treks &amp; State</th>
                         <th>Status</th>
                         <th class="pe-4">Actions</th>
                     </tr>
@@ -300,6 +403,21 @@
                             <td class="ps-4 text-secondary fw-semibold">#{{ trekker.id }}</td>
                             <td class="fw-bold">{{ trekker.name }}</td>
                             <td>{{ trekker.email }}</td>
+                            <td>
+                                {% if trekker.bookings %}
+                                    <div class="d-flex flex-column gap-1">
+                                        {% for booking in trekker.bookings %}
+                                            {% if booking.trek %}
+                                                <div class="small fw-medium">
+                                                    {{ booking.trek.name }} {{ trek_state_badge(booking.trek.state) }}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">No bookings</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if trekker.status == 'approved' %}
                                     <span class="badge rounded-pill px-3 py-2 status-approved">approved</span>
@@ -323,7 +441,46 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No trekkers found.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No trekkers found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5" id="all-bookings">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+            <h4 class="fw-bold mb-0">All Platform Bookings</h4>
+            <span class="badge bg-light text-secondary rounded-pill px-3 py-2">{{ all_bookings|length }} Bookings</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary border-bottom">
+                    <tr>
+                        <th class="ps-4">Booking ID</th>
+                        <th>Trekker Email</th>
+                        <th>Trek Name</th>
+                        <th>Booking Date</th>
+                        <th class="pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in all_bookings %}
+                        <tr>
+                            <td class="ps-4 text-secondary fw-semibold">#{{ booking.id }}</td>
+                            <td>{{ booking.user.email if booking.user else 'N/A' }}</td>
+                            <td class="fw-bold">{{ booking.trek.name if booking.trek else 'N/A' }}</td>
+                            <td class="small text-secondary">{{ booking.booking_date.strftime('%d %b %Y, %H:%M') if booking.booking_date else '' }}</td>
+                            <td class="pe-4">
+                                <span class="badge rounded-pill px-3 py-2 status-confirmed">{{ booking.status }}</span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No bookings on platform yet.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
