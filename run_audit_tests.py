@@ -475,6 +475,62 @@ class QAApplicationAuditTestCase(unittest.TestCase):
         # Check form locking for ongoing trek
         self.assertIn(b"Edits disabled for ongoing or completed treks", res.data)
 
+    def test_17_completed_trek_dynamically_shows_closed_status(self):
+        """Verify that completed treks automatically report and display Closed status in Admin, Staff, and User views."""
+        today = date.today()
+
+        # Create a completed trek with status initially set to 'Open'
+        completed_trek = Trek(
+            name="Hampta Pass Expedition",
+            location="Himachal Pradesh",
+            difficulty="Moderate",
+            duration_days=5,
+            available_slots=8,
+            start_date=today - timedelta(days=10),
+            end_date=today - timedelta(days=5),
+            status="Open",
+            assigned_staff_id=self.staff.id,
+        )
+        db.session.add(completed_trek)
+        db.session.commit()
+
+        # 1. Verify model properties
+        self.assertEqual(completed_trek.state, "Completed")
+        self.assertEqual(completed_trek.status, "Closed")
+
+        # 2. Verify DB queries respect hybrid property
+        open_treks = Trek.query.filter(Trek.status == "Open").all()
+        self.assertNotIn(completed_trek.id, [t.id for t in open_treks])
+
+        closed_treks = Trek.query.filter(Trek.status == "Closed").all()
+        self.assertIn(completed_trek.id, [t.id for t in closed_treks])
+
+        # 3. Admin Dashboard View: Shows Closed badge and Completed state
+        self._login("admin@trek.com", "adminpassword")
+        res_admin = self.client.get("/admin/dashboard")
+        self.assertEqual(res_admin.status_code, 200)
+        self.assertIn(b"Hampta Pass Expedition", res_admin.data)
+        # Check that Closed badge is rendered in the row for this trek
+        self.assertIn(b"status-closed", res_admin.data)
+        self.client.get("/logout")
+
+        # 4. Staff Dashboard View: Shows Closed badge
+        self._login("staff@trek.com", "staffpassword")
+        res_staff = self.client.get("/staff/dashboard")
+        self.assertEqual(res_staff.status_code, 200)
+        self.assertIn(b"Hampta Pass Expedition", res_staff.data)
+        self.assertIn(b"status-closed", res_staff.data)
+        self.client.get("/logout")
+
+        # 5. Trekker browse treks: Completed trek should NOT appear in open browse list
+        self._login("trekker@trek.com", "userpassword")
+        res_user = self.client.get("/user/treks")
+        self.assertEqual(res_user.status_code, 200)
+        self.assertNotIn(b"Hampta Pass Expedition", res_user.data)
+
+        # 6. Attempt booking completed trek directly
+        res_book = self.client.post(f"/user/book/{completed_trek.id}", follow_redirects=True)
+        self.assertIn(b"No slots available", res_book.data)
 
 
 if __name__ == "__main__":

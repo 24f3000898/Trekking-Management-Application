@@ -1,5 +1,7 @@
 from datetime import date, datetime
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_, case
+from sqlalchemy.ext.hybrid import hybrid_property
 
 db = SQLAlchemy()
 
@@ -39,7 +41,7 @@ class Trek(db.Model):
     image_url = db.Column(db.String(255))
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
-    status = db.Column(db.String(20), nullable=False, default="Open")
+    _status = db.Column("status", db.String(20), nullable=False, default="Open")
     assigned_staff_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
     bookings = db.relationship("Booking", back_populates="trek", cascade="all, delete-orphan")
@@ -51,6 +53,26 @@ class Trek(db.Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    @hybrid_property
+    def status(self):
+        """Returns 'Closed' if the trek is completed (end_date < today), otherwise returns stored status."""
+        today = date.today()
+        if self.end_date and self.end_date < today:
+            return "Closed"
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        self._status = value
+
+    @status.expression
+    def status(cls):
+        today = date.today()
+        return case(
+            (and_(cls.end_date.isnot(None), cls.end_date < today), "Closed"),
+            else_=cls._status,
+        )
 
     @property
     def state(self):
