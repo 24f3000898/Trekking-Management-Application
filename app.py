@@ -18,11 +18,16 @@ os.makedirs(app.instance_path, exist_ok=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + os.path.join(app.instance_path, "trekking.db")
 )
+from datetime import date, timedelta
+
 db.init_app(app)
 
-with app.app_context():
+
+def seed_initial_records():
     db.create_all()
-    if not User.query.filter_by(role="admin").first():
+    # 1. Admin
+    admin = User.query.filter_by(email="admin@trek.com").first()
+    if not admin:
         admin = User(
             name="System Admin",
             email="admin@trek.com",
@@ -31,7 +36,96 @@ with app.app_context():
             status="approved",
         )
         db.session.add(admin)
+
+    # 2. Staff: Rahul Sharma
+    staff = User.query.filter_by(email="staff@trek.com").first()
+    if not staff:
+        staff = User(
+            name="Rahul Sharma",
+            email="staff@trek.com",
+            password="staffpassword",
+            role="staff",
+            status="approved",
+        )
+        db.session.add(staff)
+
+    # 3. Sample Trekker
+    user = User.query.filter_by(email="user@gmail.com").first()
+    if not user:
+        user = User(
+            name="Ravi Paribrajak",
+            email="user@gmail.com",
+            password="123",
+            role="trekker",
+            status="approved",
+        )
+        db.session.add(user)
+
+    db.session.commit()
+
+    # 4. Sample Dummy Treks for User to browse & book
+    if Trek.query.count() == 0:
+        today = date.today()
+        treks = [
+            Trek(
+                name="Kedarkantha Trek",
+                location="Uttarakhand",
+                difficulty="Moderate",
+                duration_days=5,
+                total_slots=20,
+                available_slots=15,
+                start_date=today + timedelta(days=5),
+                end_date=today + timedelta(days=10),
+                status="Open",
+                assigned_staff_id=staff.id if staff else None,
+                image_url="https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=800",
+            ),
+            Trek(
+                name="Triund Trek",
+                location="Himachal Pradesh",
+                difficulty="Easy",
+                duration_days=2,
+                total_slots=25,
+                available_slots=22,
+                start_date=today + timedelta(days=7),
+                end_date=today + timedelta(days=9),
+                status="Open",
+                assigned_staff_id=staff.id if staff else None,
+                image_url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800",
+            ),
+            Trek(
+                name="Kashmir Great Lakes Trek",
+                location="Jammu & Kashmir",
+                difficulty="Hard",
+                duration_days=7,
+                total_slots=15,
+                available_slots=11,
+                start_date=today + timedelta(days=12),
+                end_date=today + timedelta(days=19),
+                status="Open",
+                assigned_staff_id=staff.id if staff else None,
+                image_url="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=800",
+            ),
+            Trek(
+                name="Valley of Flowers Expedition",
+                location="Uttarakhand",
+                difficulty="Moderate",
+                duration_days=6,
+                total_slots=18,
+                available_slots=14,
+                start_date=today + timedelta(days=15),
+                end_date=today + timedelta(days=21),
+                status="Open",
+                assigned_staff_id=staff.id if staff else None,
+                image_url="https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?q=80&w=800",
+            ),
+        ]
+        db.session.add_all(treks)
         db.session.commit()
+
+
+with app.app_context():
+    seed_initial_records()
 
 
 def login_required(function):

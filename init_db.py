@@ -78,8 +78,21 @@ def reset_and_seed_database():
                 start_date=today + timedelta(days=12),
                 end_date=today + timedelta(days=19),
                 status="Open",
-                assigned_staff_id=None,
+                assigned_staff_id=staff.id,
                 image_url="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=800"
+            ),
+            Trek(
+                name="Valley of Flowers Expedition",
+                location="Uttarakhand",
+                difficulty="Moderate",
+                duration_days=6,
+                total_slots=18,
+                available_slots=14,
+                start_date=today + timedelta(days=15),
+                end_date=today + timedelta(days=21),
+                status="Open",
+                assigned_staff_id=staff.id,
+                image_url="https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?q=80&w=800"
             )
         ]
 
