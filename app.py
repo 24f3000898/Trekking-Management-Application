@@ -18,9 +18,20 @@ os.makedirs(app.instance_path, exist_ok=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + os.path.join(app.instance_path, "trekking.db")
 )
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+    if not User.query.filter_by(role="admin").first():
+        admin = User(
+            name="System Admin",
+            email="admin@trek.com",
+            password="adminpassword",
+            role="admin",
+            status="approved",
+        )
+        db.session.add(admin)
+        db.session.commit()
 
 
 def login_required(function):

@@ -31,7 +31,7 @@ def reset_and_seed_database():
             name="Ravi Paribrajak",
             email="user@gmail.com",
             password="123",
-            role="user",
+            role="trekker",
             status="approved"
         )
 
